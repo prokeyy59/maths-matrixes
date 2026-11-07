@@ -1,0 +1,2028 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>MATH MATRIX</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one centred column. Header, a four-step level rail, then a single working card for the welcome, question or result. A kid character rises from the bottom edge after each answer. */
+:root {
+  --bg: #0e1620;
+  --surface: #162231;
+  --surface-2: #1d2d41;
+  --line: #2a3d55;
+  --fg: #e9eef5;
+  --muted: #92a3b8;
+  --accent: #f2b84b;
+  --accent-ink: #1c1405;
+  --good: #5fcf9a;
+  --bad: #f27b7b;
+  --shirt: #4aa8ff;
+  --shirt-dark: #2f86d6;
+  --skin: #e8b58c;
+  --skin-shade: #c98f66;
+  --hair: #2b1d16;
+  --ink: #1b1410;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  min-height: 100vh;
+}
+body.kid-pad { padding-bottom: 270px; }
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(14,22,32,0) 0%, var(--bg) 85%);
+  opacity: .78;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Maths backdrop: drifting symbols and a sine wave, shared by every page */
+.math-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.math-bg .sym {
+  position: absolute; font-family: var(--font-mono); font-weight: 700; color: var(--accent);
+  opacity: .12; line-height: 1; user-select: none;
+  animation: drift var(--d, 16s) ease-in-out infinite alternate;
+}
+.math-bg .sym.alt { color: var(--good); opacity: .1; }
+.math-bg svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 38vh; opacity: .22; }
+.math-bg svg path { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+.math-bg svg path.b { stroke: var(--good); opacity: .6; }
+@keyframes drift { from { transform: translate(0, 0) rotate(-4deg); } to { transform: translate(14px, -26px) rotate(5deg); } }
+
+.wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(34px, 8vw, 52px); line-height: 1.02; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.maker { margin: 0; font-family: var(--font-mono); font-size: 13px; color: var(--muted); letter-spacing: .04em; }
+.maker b { color: var(--fg); font-weight: 700; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.tools { display: flex; gap: 8px; }
+.home[aria-pressed="false"] { opacity: .65; text-decoration: line-through; }
+.home { appearance: none; font: inherit; font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+.home:hover { color: var(--fg); border-color: var(--muted); }
+.home:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.step {
+  appearance: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  transition: border-color .15s, background .15s;
+}
+.step:hover { border-color: var(--muted); }
+.step:focus-visible, .opt:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.step .n { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+.step .t { font-family: var(--font-display); font-weight: 700; font-size: 15px; line-height: 1.15; overflow-wrap: anywhere; }
+.step .s { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.step.current { border-color: var(--accent); background: var(--surface-2); }
+.step.current .n { color: var(--accent); }
+.step.done .s { color: var(--good); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.stage-name { font-family: var(--font-display); font-weight: 700; font-size: 18px; }
+.stage-name small { display: block; font-family: var(--font-body); font-weight: 400; font-size: 13px; color: var(--muted); }
+.dots { display: flex; gap: 6px; }
+.dot { width: 22px; height: 6px; border-radius: 3px; background: var(--line); }
+.dot.on { background: var(--accent); }
+.dot.ok { background: var(--good); }
+.dot.no { background: var(--bad); }
+
+.q { font-family: var(--font-mono); font-weight: 700; font-size: clamp(22px, 5.4vw, 30px); line-height: 1.3; letter-spacing: -.01em; margin: 0; overflow-wrap: anywhere; }
+.qhint { font-size: 14px; color: var(--muted); margin: -10px 0 0; }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.opt {
+  appearance: none; font-family: var(--font-mono); font-weight: 500; font-size: 18px; color: var(--fg);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 12px; cursor: pointer; text-align: center; min-width: 0; overflow-wrap: anywhere;
+  transition: border-color .15s, background .15s;
+}
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { cursor: default; }
+.opt.right { border-color: var(--good); background: rgba(95, 207, 154, .14); animation: pop .55s cubic-bezier(.3, 1.6, .5, 1); }
+.opt.wrong { border-color: var(--bad); background: rgba(242, 123, 123, .14); animation: shake .4s; }
+.opt.dim { opacity: .5; }
+@keyframes pop { 0% { transform: scale(.92); } 60% { transform: scale(1.07); } 100% { transform: scale(1); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+.feedback { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; display: flex; flex-direction: column; gap: 2px; }
+.feedback.ok { border-color: var(--good); }
+.feedback.no { border-color: var(--bad); }
+.feedback b { font-family: var(--font-display); font-size: 16px; }
+.feedback span { color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn {
+  appearance: none; font-family: var(--font-body); font-weight: 600; font-size: 16px; cursor: pointer;
+  border-radius: 10px; padding: 12px 20px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg);
+  transition: transform .1s, border-color .15s;
+}
+.btn:hover { border-color: var(--muted); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { border-color: var(--fg); }
+.btn.big { font-family: var(--font-display); font-weight: 700; font-size: 20px; padding: 16px 34px; }
+
+.welcome { gap: 26px; padding: 28px 22px; }
+.welcome .formula { font-family: var(--font-mono); font-size: 14px; color: var(--muted); letter-spacing: .02em; overflow-wrap: anywhere; }
+.welcome .formula b { color: var(--accent); font-weight: 700; }
+.welcome h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 7vw, 44px); line-height: 1.05; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.welcome p { margin: 0; color: var(--muted); max-width: 50ch; }
+.lvl-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.levels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lvl {
+  appearance: none; font: inherit; color: inherit; text-align: left; cursor: pointer; min-width: 0;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px;
+  display: flex; flex-direction: column; gap: 4px; transition: border-color .15s, background .15s;
+}
+.lvl:hover { border-color: var(--muted); }
+.lvl:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lvl[aria-pressed="true"] { border-color: var(--accent); background: rgba(242, 184, 75, .1); }
+.lvl .sigma { font-family: var(--font-mono); font-weight: 700; font-size: 22px; color: var(--accent); line-height: 1; }
+.lvl .ln { font-family: var(--font-display); font-weight: 700; font-size: 17px; line-height: 1.15; }
+.lvl .ld { font-size: 13px; color: var(--muted); }
+.lvl .ls { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lvl .ls.ok { color: var(--good); }
+
+/* Vs AI mode: scores sit in the top corners, yours on the left and the AI's on the right */
+.board {
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); z-index: 7;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 6px 14px; min-width: 96px; display: flex; flex-direction: column; transition: border-color .2s;
+}
+.board.you { left: max(12px, env(safe-area-inset-left, 0px)); }
+.board.ai { right: max(12px, env(safe-area-inset-right, 0px)); align-items: flex-end; }
+.board .bl { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.board .bv { font-family: var(--font-mono); font-weight: 700; font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; display: inline-block; }
+.board.you .bv { color: var(--accent); }
+.board.ai .bv { color: var(--shirt); }
+.board.lead { border-color: var(--good); }
+.bv.bump { animation: bump .5s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); } }
+body.vs { padding-top: 88px; }
+.vs-info { display: flex; flex-direction: column; gap: 8px; }
+.vs-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.vs-row b { font-family: var(--font-display); }
+.vs-row span { font-family: var(--font-mono); color: var(--muted); font-size: 13px; }
+.ai-line { font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
+.ai-line.ok { color: var(--shirt); }
+.vs-total { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.vs-total div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.vs-total small { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.vs-total b { font-family: var(--font-mono); font-size: 28px; font-variant-numeric: tabular-nums; }
+.vs-total .yb { color: var(--accent); }
+.vs-total .ab { color: var(--shirt); }
+
+.result-box { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; }
+.score { font-family: var(--font-mono); font-weight: 700; font-size: clamp(54px, 16vw, 84px); line-height: 1; font-variant-numeric: tabular-nums; }
+.score span { color: var(--muted); font-size: .5em; }
+.result-box h2 { font-family: var(--font-display); font-weight: 800; font-size: 26px; margin: 0; text-wrap: balance; }
+.result-box p { margin: 0; color: var(--muted); max-width: 52ch; }
+.breakdown { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.breakdown div { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; display: flex; justify-content: space-between; gap: 8px; }
+.breakdown b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+footer { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+
+/* The kid: rises from the bottom edge after every answer. Thumbs up when right, a raised finger and an explanation when wrong. */
+.kid {
+  position: fixed; bottom: 0; right: max(10px, env(safe-area-inset-right, 0px)); z-index: 6;
+  display: flex; align-items: flex-end; gap: 4px; max-width: calc(100vw - 20px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateY(120%); transition: transform .6s cubic-bezier(.18, 1.3, .4, 1);
+  pointer-events: none;
+}
+.kid.up { transform: translateY(0); }
+.kid-svg { width: clamp(92px, 24vw, 130px); height: auto; flex: none; display: block; }
+.kid .t-only { display: none; }
+.kid.think .t-only { display: inline; }
+.kid.think .h-only { display: none; }
+.kid.up .arm { transform-origin: 94px 122px; animation: wave .5s ease-in-out .55s 3 alternate; }
+.kid.think.up .arm { animation-name: nod; animation-iteration-count: 4; }
+.kid.think .bulb { animation: glow 1s ease-in-out infinite alternate; }
+@keyframes wave { from { transform: rotate(-8deg); } to { transform: rotate(8deg); } }
+@keyframes nod { from { transform: rotate(-3deg); } to { transform: rotate(5deg); } }
+@keyframes glow { from { opacity: .65; } to { opacity: 1; } }
+.bubble {
+  position: relative; margin-bottom: 56px; max-width: min(250px, 58vw);
+  background: var(--surface-2); border: 2px solid var(--good); border-radius: 16px;
+  padding: 10px 14px; font-size: 14px; line-height: 1.4; color: var(--fg); overflow-wrap: anywhere;
+}
+.bubble.no { border-color: var(--accent); }
+.bubble.ok { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
+.bubble::after {
+  content: ""; position: absolute; right: -9px; bottom: 16px; width: 14px; height: 14px;
+  background: var(--surface-2); border-right: 2px solid var(--good); border-top: 2px solid var(--good);
+  transform: rotate(45deg);
+}
+.bubble.no::after { border-color: var(--accent); }
+
+.confetti { position: fixed; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; }
+.confetti i { position: absolute; top: -20px; border-radius: 2px; animation: fall linear forwards; }
+@keyframes fall { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(var(--dx), 105vh) rotate(var(--r)); opacity: 0; } }
+
+/* Opening screen: a coordinate plane with curves that draw themselves, formulas drifting behind, and a Start button */
+.splash {
+  position: fixed; inset: 0; z-index: 20; display: flex; overflow: hidden;
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px; background-position: -1px -1px;
+  transition: opacity .5s ease, transform .5s ease;
+}
+.splash::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top, var(--bg) 0%, rgba(14, 22, 32, .88) 32%, rgba(14, 22, 32, 0) 68%);
+}
+.splash.leaving { opacity: 0; transform: translateY(-24px); pointer-events: none; }
+body.splash-on { overflow: hidden; }
+.sp-art { position: absolute; inset: 0; pointer-events: none; }
+.sp-art svg { width: 100%; height: 100%; display: block; }
+.sp-art .ax { stroke: var(--muted); stroke-width: 1.2; opacity: .5; }
+.sp-art .curve { fill: none; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 2.6s ease-out forwards; }
+.sp-art .c1 { stroke: var(--accent); }
+.sp-art .c2 { stroke: var(--good); animation-delay: .5s; }
+.sp-art .unit { fill: none; stroke: var(--shirt); stroke-width: 2; stroke-dasharray: 6 6; opacity: .75; }
+.sp-art .tri { fill: rgba(74, 168, 255, .12); stroke: var(--shirt); stroke-width: 2.5; stroke-linejoin: round; }
+.sp-art .rt { fill: none; stroke: var(--shirt); stroke-width: 2; }
+.sp-art text { font-family: var(--font-mono); font-size: 20px; fill: var(--muted); }
+.sp-art text.hl { fill: var(--fg); }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.sp-f { position: absolute; font-family: var(--font-mono); font-weight: 500; color: var(--accent); opacity: .24; white-space: nowrap; animation: drift var(--d, 16s) ease-in-out infinite alternate; }
+.sp-f.alt { color: var(--shirt); }
+.sp-body {
+  position: relative; z-index: 1; width: 100%; max-width: 720px; margin: 0 auto;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 16px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 24px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + max(40px, 10vh));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.sp-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(60px, 17vw, 128px); line-height: .9; letter-spacing: -.03em; margin: 0; }
+.sp-title span { color: var(--accent); }
+.sp-tags { font-family: var(--font-mono); font-size: 13px; letter-spacing: .12em; color: var(--muted); white-space: pre; }
+
+/* Mode deck: swipe or drag sideways between the three modes */
+.deck { overflow: hidden; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-2); touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+.deck:active { cursor: grabbing; }
+.deck:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.track { display: flex; transition: transform .35s cubic-bezier(.2, .8, .2, 1); will-change: transform; }
+.track.dragging { transition: none; }
+.panel { flex: 0 0 100%; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+.panel .ptag { font-family: var(--font-mono); font-weight: 700; font-size: 34px; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.panel .pn { font-family: var(--font-display); font-weight: 800; font-size: 26px; line-height: 1.1; }
+.panel .pd { color: var(--muted); font-size: 15px; max-width: 46ch; }
+.deck-nav { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.arrow { appearance: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); font-size: 22px; line-height: 1; cursor: pointer; padding: 0 0 3px; }
+.arrow:hover:not(:disabled) { border-color: var(--accent); }
+.arrow:disabled { opacity: .35; cursor: default; }
+.arrow:focus-visible, .pip:focus-visible, .chip:focus-visible, .preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pips { display: flex; gap: 8px; }
+.pip { appearance: none; width: 28px; height: 8px; border-radius: 4px; border: 0; background: var(--line); cursor: pointer; padding: 0; }
+.pip[aria-pressed="true"] { background: var(--accent); }
+.mode-config { display: flex; flex-direction: column; gap: 12px; }
+
+/* Fast & Furious setup: topic chips and a custom stopwatch */
+.chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.chip { appearance: none; font: inherit; color: inherit; text-align: left; cursor: pointer; min-width: 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; transition: border-color .15s, background .15s; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: rgba(242, 184, 75, .1); }
+.chip .ct { font-family: var(--font-mono); font-weight: 700; font-size: 16px; color: var(--accent); line-height: 1.1; }
+.chip .cn { font-family: var(--font-display); font-weight: 700; font-size: 14px; line-height: 1.15; overflow-wrap: anywhere; }
+.stopwatch { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.swdisplay { font-family: var(--font-mono); font-weight: 700; font-size: clamp(36px, 10vw, 48px); line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; min-width: 4.4ch; }
+.sw-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.presets { display: flex; gap: 6px; flex-wrap: wrap; }
+.preset { appearance: none; font-family: var(--font-mono); font-size: 13px; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.preset:hover { border-color: var(--muted); }
+.preset[aria-pressed="true"] { border-color: var(--accent); background: rgba(242, 184, 75, .12); color: var(--accent); }
+.custom { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.custom input { width: 6em; font-family: var(--font-mono); font-size: 15px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+.custom input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.custom input[aria-invalid="true"] { border-color: var(--bad); }
+.best-line { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* Fast & Furious play screen */
+.fbar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.fbar > i { display: block; height: 100%; width: 100%; background: var(--accent); transition: width .1s linear; }
+.fbar.low > i { background: var(--bad); }
+.combo { font-family: var(--font-mono); font-size: 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-variant-numeric: tabular-nums; }
+.combo.hot { color: var(--accent); border-color: var(--accent); background: rgba(242, 184, 75, .1); }
+.fmsg { min-height: 1.6em; font-family: var(--font-mono); font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.fmsg.ok { color: var(--good); }
+.fmsg.no { color: var(--bad); }
+.fast-intro { align-items: center; text-align: center; justify-content: center; min-height: 300px; }
+.fast-intro p { margin: 0; color: var(--muted); max-width: 36ch; }
+.count { font-family: var(--font-display); font-weight: 800; font-size: clamp(88px, 28vw, 160px); line-height: 1; color: var(--accent); animation: pop .5s cubic-bezier(.3, 1.6, .5, 1); }
+.board.low .bv { color: var(--bad); animation: pulse .5s ease-in-out infinite alternate; }
+.board.hit { border-color: var(--bad); }
+@keyframes pulse { from { opacity: 1; } to { opacity: .55; } }
+.board.ai .bv { min-width: 3.2ch; text-align: right; }
+
+/* Section tabs: Quiz and Class 10 Maths */
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
+.segb { appearance: none; font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--muted); background: transparent; border: 0; border-radius: 9px; padding: 10px 8px; cursor: pointer; transition: background .15s, color .15s; }
+.segb:hover { color: var(--fg); }
+.segb[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.segb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Class 10 Maths chapter pages */
+.chapters h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(26px, 6vw, 36px); line-height: 1.1; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.chapters h3.sub { font-family: var(--font-mono); font-weight: 700; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 6px 0 -8px; }
+.chapters p { margin: 0; color: var(--muted); max-width: 66ch; }
+.sumbox { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 0 14px; }
+.sumbox[open] { padding-bottom: 12px; }
+.sumbox summary { cursor: pointer; padding: 10px 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.sumbox summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.sumbox p { margin: 0; color: var(--fg); font-size: 15px; }
+.chapters .note { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }
+.btn.small { align-self: flex-start; font-size: 14px; padding: 8px 14px; }
+.chlist { display: flex; flex-direction: column; gap: 8px; }
+.chrow { appearance: none; font: inherit; color: inherit; text-align: left; cursor: pointer; display: grid; grid-template-columns: 2.2em minmax(0, 1fr); column-gap: 10px; row-gap: 0; align-items: baseline; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; transition: border-color .15s; }
+.chrow:hover { border-color: var(--accent); }
+.chrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chn { grid-row: span 2; font-family: var(--font-mono); font-weight: 700; font-size: 20px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.cht { font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1.25; overflow-wrap: anywhere; }
+.chu { font-size: 12px; color: var(--muted); }
+.points { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; color: var(--fg); max-width: 66ch; }
+
+@media (max-width: 520px) {
+  .chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stopwatch { grid-template-columns: 1fr; }
+  .rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .levels { grid-template-columns: 1fr; }
+  .card { padding: 18px; }
+  .breakdown { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+  .sp-art .curve { stroke-dashoffset: 0 !important; }
+}
+</style>
+
+<div class="math-bg" id="mathbg" aria-hidden="true"></div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+<div class="board you" id="boardYou" hidden><span class="bl" id="youLabel">You</span><span class="bv" id="youScore">0</span></div>
+<div class="board ai" id="boardAi" hidden><span class="bl" id="aiLabel">AI</span><span class="bv" id="aiScore">0</span></div>
+<section class="splash" id="splash" aria-label="Welcome to MATH MATRIX">
+  <div class="sp-art" id="spArt" aria-hidden="true"></div>
+  <div class="sp-body">
+    <div class="eyebrow">General maths · 4 levels · vs AI</div>
+    <div class="sp-title">MATH<br><span>MATRIX</span></div>
+    <div class="sp-tags" aria-hidden="true">+ −   ·   ½ %   ·   x²   ·   ∫</div>
+    <p class="maker">Made by <b>Suyash Trivedi</b></p>
+    <button class="btn primary big" id="splashStart" type="button">Start</button>
+  </div>
+</section>
+<div class="wrap">
+  <header>
+    <div class="topbar">
+      <div class="eyebrow">General maths · 4 levels · 40 questions</div>
+      <div class="tools">
+        <button class="home" id="soundBtn" type="button" aria-pressed="true" hidden>Voice on</button>
+        <button class="home" id="homeBtn" type="button" hidden>Home</button>
+      </div>
+    </div>
+    <h1>MATH MATRIX</h1>
+    <p class="maker">Made by <b>Suyash Trivedi</b></p>
+  </header>
+  <nav class="rail" id="rail" aria-label="Levels" hidden></nav>
+  <main class="card" id="card" aria-live="polite"></main>
+  <footer>Made by Suyash Trivedi · Pass mark 6 / 10 per level · New questions on every try</footer>
+</div>
+
+<div class="kid" id="kid" role="status">
+  <div class="bubble" id="bubble"></div>
+  <svg class="kid-svg" viewBox="0 0 130 150" aria-hidden="true">
+    <path d="M20 150 C20 112 36 100 65 100 C94 100 110 112 110 150 Z" fill="var(--shirt)"/>
+    <path d="M52 100 L65 115 L78 100 Z" fill="var(--shirt-dark)"/>
+    <rect x="56" y="86" width="18" height="18" rx="6" fill="var(--skin)"/>
+    <path d="M24 120 C14 130 12 142 14 150 L34 150 L37 124 Z" fill="var(--shirt)"/>
+    <circle cx="34" cy="66" r="6" fill="var(--skin)"/>
+    <circle cx="96" cy="66" r="6" fill="var(--skin)"/>
+    <circle cx="65" cy="62" r="31" fill="var(--skin)"/>
+    <path d="M33 60 C29 30 52 22 70 25 C92 27 102 44 97 60 C92 49 82 43 66 45 C52 45 40 50 33 60 Z" fill="var(--hair)"/>
+    <circle cx="47" cy="73" r="5" fill="#f08a8a" opacity=".55"/>
+    <circle cx="83" cy="73" r="5" fill="#f08a8a" opacity=".55"/>
+    <g class="h-only">
+      <path d="M46 60 Q52 52 58 60" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+      <path d="M72 60 Q78 52 84 60" stroke="var(--ink)" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+      <path d="M51 72 Q65 92 79 72 Z" fill="var(--ink)"/>
+      <path d="M57 80 Q65 86 73 80 Q65 77 57 80 Z" fill="#e8606a"/>
+    </g>
+    <g class="t-only">
+      <circle cx="53" cy="61" r="3.6" fill="var(--ink)"/>
+      <circle cx="77" cy="61" r="3.6" fill="var(--ink)"/>
+      <path d="M45 54 L60 50" stroke="var(--hair)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M85 54 L70 50" stroke="var(--hair)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M56 77 Q65 84 74 77" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g class="bulb">
+        <circle cx="20" cy="26" r="11" fill="var(--accent)"/>
+        <rect x="15" y="36" width="10" height="6" rx="2" fill="#c98f2a"/>
+        <path d="M20 8 v-4 M5 14 l-3 -3 M35 14 l3 -3 M2 28 h-3 M38 28 h3" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+      </g>
+    </g>
+    <g class="arm">
+      <line x1="94" y1="122" x2="113" y2="100" stroke="var(--shirt)" stroke-width="16" stroke-linecap="round"/>
+      <rect class="h-only" x="108" y="54" width="9" height="28" rx="4.5" fill="var(--skin)"/>
+      <rect class="t-only" x="113" y="52" width="7" height="30" rx="3.5" fill="var(--skin)"/>
+      <rect x="103" y="76" width="23" height="21" rx="8" fill="var(--skin)"/>
+      <path d="M110 82 h12 M110 88 h12" stroke="var(--skin-shade)" stroke-width="1.6" stroke-linecap="round"/>
+    </g>
+  </svg>
+</div>
+
+<script>
+/* ---------- Question generators: every try builds brand new numbers ---------- */
+const sup = n => String(n).split("").map(d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[+d]).join("");
+const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pickOf = arr => arr[ri(0, arr.length - 1)];
+const gcd = (a, b) => b ? gcd(b, a % b) : Math.abs(a);
+const frac = (n, d) => { const g = gcd(n, d); n /= g; d /= g; return d === 1 ? String(n) : n + "/" + d; };
+function shuffle(a) {
+  const b = a.slice();
+  for (let k = b.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [b[k], b[j]] = [b[j], b[k]]; }
+  return b;
+}
+// Puts the correct answer at a random spot among three distinct wrong ones.
+function finish(q, correct, wrongs, e, h) {
+  const w = [];
+  for (const x of wrongs) { if (x !== correct && !w.includes(x)) w.push(x); if (w.length === 3) break; }
+  if (w.length < 3) return null;
+  const pos = ri(0, 3);
+  const o = w.slice();
+  o.splice(pos, 0, correct);
+  return { q, o, a: pos, e, h };
+}
+function num(q, ans, cands, e, fmt, h) {
+  fmt = fmt || String;
+  const w = [];
+  for (const c of cands) { if (Number.isFinite(c) && c > 0 && c !== ans && !w.includes(c)) w.push(c); }
+  for (let k = 1; w.length < 3; k++) {
+    for (const c of [ans + k, ans - k]) { if (c > 0 && c !== ans && !w.includes(c) && w.length < 3) w.push(c); }
+  }
+  return finish(q, fmt(ans), w.slice(0, 3).map(fmt), e, h);
+}
+function term(c, e) {
+  if (e === 0) return String(c);
+  return (c === 1 ? "" : String(c)) + "x" + (e === 1 ? "" : sup(e));
+}
+
+// Level 1: Foundations
+function g11() { const a = ri(20, 89), b = ri(20, 89), s = a + b;
+  return num(`${a} + ${b} = ?`, s, [s + 10, s - 10, s + 2, s - 1], `${a} + ${b} = ${s}. Add the tens first, then the ones.`); }
+function g12() { const a = ri(6, 12), b = ri(6, 12), p = a * b;
+  return num(`${a} × ${b} = ?`, p, [p + a, p - b, p + 10, p - 10], `${a} × ${b} = ${p}. Think of ${a} groups of ${b}.`); }
+function g13() { const b = ri(3, 12), q = ri(6, 15), n = b * q;
+  return num(`${n} ÷ ${b} = ?`, q, [q + 1, q - 1, q + 2, q - 2], `${b} × ${q} = ${n}, so ${n} ÷ ${b} = ${q}.`); }
+function g14() { const a = pickOf([100, 200, 300]), b = ri(21, 79), d = a - b;
+  return num(`${a} − ${b} = ?`, d, [d + 10, d - 10, d + 2, d - 2], `Take ${b} away from ${a} and you are left with ${d}.`); }
+function g15() { const n = ri(5, 12), k = ri(2, 9), v = n * n + k;
+  return num(`${n}² + ${k} = ?`, v, [2 * n + k, v + 10, n * n - k, v - 1], `${n}² means ${n} × ${n} = ${n * n}, and ${n * n} + ${k} = ${v}.`); }
+
+// Level 2: Fractions and percent
+function g21() { const d = pickOf([2, 3, 4, 5]), nu = ri(1, d - 1), k = ri(4, 20), N = d * k, ans = nu * k;
+  return num(`${nu}/${d} of ${N} = ?`, ans, [k, N - ans, ans + k, ans - k], `Split ${N} into ${d} equal parts of ${k}, then take ${nu} of them: ${nu} × ${k} = ${ans}.`); }
+function g22() { const p = pickOf([10, 20, 25, 50, 75]), N = ri(1, 20) * 20, ans = p * N / 100;
+  return num(`${p}% of ${N} = ?`, ans, [N - ans, ans * 2, ans + 10, ans - 5], `${p}% of ${N} = ${p}/100 × ${N} = ${ans}.`); }
+function g23() { const d = pickOf([4, 5, 8, 20, 25]), nu = ri(1, d - 1), pct = nu * 100 / d;
+  return num(`${nu}/${d} as a percentage?`, pct, [pct + 5, pct - 10, 100 - pct, pct + 10], `${nu} ÷ ${d} = ${nu / d}, and multiplying by 100 gives ${pct}%.`, x => x + "%"); }
+function g24() { const b = ri(2, 9), d = ri(2, 9), a = ri(1, b - 1), c = ri(1, d - 1), ans = frac(a * c, b * d);
+  return finish(`${a}/${b} × ${c}/${d} = ?`, ans, [frac(a * d, b * c), frac(a + c, b + d), frac(a * c, b + d), frac(a * c + 1, b * d), frac(a * c, b * d + 1)],
+    `Multiply the tops (${a} × ${c} = ${a * c}) and the bottoms (${b} × ${d} = ${b * d}), then reduce if you can: ${ans}.`); }
+function g25() { const P = pickOf([400, 500, 600, 800, 1000, 1200, 1500, 2000]), dsc = pickOf([10, 15, 20, 25, 30]), off = P * dsc / 100, sale = P - off;
+  return num(`A ₹${P} item gets ${dsc}% off. Sale price?`, sale, [off, P - dsc, sale + dsc, sale + off / 2], `${dsc}% of ${P} is ₹${off}, and ${P} − ${off} = ₹${sale}.`, x => "₹" + x); }
+
+// Level 3: Algebra and geometry
+function g31() { const a = ri(2, 9), x = ri(2, 12), b = ri(1, 15), c = a * x + b;
+  return num(`Solve: ${a}x + ${b} = ${c}`, x, [a * x, x + 1, x - 1, x + 2], `Subtract ${b} from both sides to get ${a}x = ${a * x}, then divide by ${a}.`, v => "x = " + v); }
+function g32() { const bs = pickOf([4, 6, 8, 10, 12, 14, 16, 18, 20]), h = ri(3, 15), area = bs * h / 2;
+  return num(`Area of a triangle with base ${bs} and height ${h}?`, area, [bs * h, bs + h, area + h, area + bs]
+    , `Area = ½ × base × height = ½ × ${bs} × ${h} = ${area}.`); }
+function g33() { let p = ri(1, 6), q = ri(1, 6); while (p === q) q = ri(1, 6);
+  const ans = `x² + ${p + q}x + ${p * q}`;
+  return finish(`(x + ${p})(x + ${q}) = ?`, ans, [`x² + ${p * q}x + ${p + q}`, `x² + ${p + q}x + ${p + q}`, `x² + ${p * q}`, `x² + ${p * q}x + ${p * q}`],
+    `Multiply each pair: x² + ${q}x + ${p}x + ${p * q} = x² + ${p + q}x + ${p * q}.`); }
+function g34() { const k = ri(1, 5), r = 7 * k, C = 44 * k, area = 154 * k * k;
+  return num(`Circumference of a circle with radius ${r}?`, C, [area, 22 * k, C + 22, C * 2], `Circumference = 2πr = 2 × 22/7 × ${r} = ${C}.`, String, "Use π ≈ 22/7."); }
+function g35() { const t = pickOf([[3, 4, 5], [5, 12, 13], [8, 15, 17], [6, 8, 10], [9, 12, 15], [7, 24, 25], [20, 21, 29]]), sw = Math.random() < .5, a = sw ? t[1] : t[0], b = sw ? t[0] : t[1], c = t[2];
+  return num(`Right triangle with legs ${a} and ${b}. Hypotenuse?`, c, [a + b, c + 1, c - 1, c + 2], `${a}² + ${b}² = ${a * a} + ${b * b} = ${c * c}, and √${c * c} = ${c}.`); }
+
+// Level 4: Challenge
+function g41() { const n = ri(2, 6), a = ri(1, 5), ans = term(a * n, n - 1);
+  return finish(`d/dx of ${term(a, n)} = ?`, ans, [term(a, n - 1), term(a * n, n), `${a === 1 ? "" : a}x${sup(n + 1)}/${n + 1}`, term(a * n, n + 1)],
+    `Power rule: bring the power ${n} down to multiply the coefficient (${a} × ${n} = ${a * n}) and lower the power by one. That gives ${ans}.`); }
+function g42() { const n = pickOf([20, 30, 40, 50, 60, 80, 100, 200]), s = n * (n + 1) / 2;
+  return num(`1 + 2 + 3 + … + ${n} = ?`, s, [n * (n + 1), n * (n - 1) / 2, n * n / 2, s + n], `Use n(n + 1)/2 = ${n} × ${n + 1} / 2 = ${s}.`); }
+function g43() { const s = ri(3, 11); let cnt = 0;
+  for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if (a + b === s) cnt++;
+  const ans = frac(cnt, 36);
+  return finish(`Two fair dice are rolled. P(sum = ${s})?`, ans, [frac(cnt + 1, 36), frac(cnt - 1, 36), frac(cnt, 12), frac(cnt, 18), frac(1, 36)],
+    `${cnt} of the 36 equally likely outcomes add up to ${s}. That is ${cnt}/36` + (ans === cnt + "/36" ? "." : `, or ${ans} in simplest form.`)); }
+function g44() { const r1 = ri(1, 8), r2 = ri(r1 + 1, 9), S = r1 + r2, P = r1 * r2, ans = `x = ${r1} or ${r2}`;
+  return finish(`Solve: x² − ${S}x + ${P} = 0`, ans, [`x = −${r1} or −${r2}`, `x = ${r1 + 1} or ${r2 + 1}`, `x = 1 or ${P}`, `x = ${r1} or ${r2 + 2}`],
+    `Find two numbers that multiply to ${P} and add to ${S}: ${r1} and ${r2}. So (x − ${r1})(x − ${r2}) = 0.`); }
+function g45() { const base = pickOf([2, 3, 7, 8]), n = ri(30, 2030);
+  const cycle = []; let v = 1;
+  for (let i = 0; i < 4; i++) { v = (v * base) % 10; cycle.push(v); }
+  let d = 1; for (let i = 0; i < n; i++) d = (d * base) % 10;
+  const pos = n % 4 === 0 ? 4 : n % 4;
+  return num(`Last digit of ${base}${sup(n)}?`, d, cycle.concat([1, 5, 9, 6]), `Last digits of powers of ${base} repeat as ${cycle.join(", ")}. ${n} is position ${pos} in that cycle, so the last digit is ${d}.`); }
+// Trigonometry and extra probability (used by Fast & Furious)
+const EXACT = { sin: ["0", "1/2", "√2/2", "√3/2", "1"], cos: ["1", "√3/2", "√2/2", "1/2", "0"], tan: ["0", "1/√3", "1", "√3", "undefined"] };
+const ANGLES = [0, 30, 45, 60, 90];
+const TRIG_POOL = ["0", "1/2", "√2/2", "√3/2", "1", "√3", "1/√3", "2"];
+function gT1() {
+  const fn = pickOf(["sin", "cos", "tan"]);
+  const i = fn === "tan" ? ri(0, 3) : ri(0, 4);
+  const ans = EXACT[fn][i];
+  return finish(`${fn} ${ANGLES[i]}° = ?`, ans, shuffle(TRIG_POOL),
+    `At 0°, 30°, 45°, 60° and 90°, ${fn} takes the values ${EXACT[fn].join(", ")}. So ${fn} ${ANGLES[i]}° = ${ans}.`);
+}
+const IDENT = [
+  ["1 − sin²θ", "cos²θ", "sin²θ + cos²θ = 1, so 1 − sin²θ = cos²θ."],
+  ["1 − cos²θ", "sin²θ", "sin²θ + cos²θ = 1, so 1 − cos²θ = sin²θ."],
+  ["sin θ / cos θ", "tan θ", "tan θ is defined as sin θ divided by cos θ."],
+  ["cos θ / sin θ", "cot θ", "cot θ is defined as cos θ divided by sin θ."],
+  ["1 / cos θ", "sec θ", "sec θ is the reciprocal of cos θ."],
+  ["1 / sin θ", "cosec θ", "cosec θ is the reciprocal of sin θ."],
+  ["sin²θ + cos²θ", "1", "This identity holds for every angle θ."]
+];
+const IDENT_POOL = ["sin²θ", "cos²θ", "tan θ", "cot θ", "sec θ", "cosec θ", "1"];
+function gT2() { const [x, ans, e] = pickOf(IDENT); return finish(`${x} = ?`, ans, shuffle(IDENT_POOL), e); }
+function gT3() {
+  const t = pickOf([[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25], [20, 21, 29]]), sw = Math.random() < .5;
+  const opp = sw ? t[1] : t[0], adj = sw ? t[0] : t[1], hyp = t[2];
+  const fn = pickOf(["sin", "cos", "tan"]);
+  const R = { sin: [opp, hyp, "opposite ÷ hypotenuse"], cos: [adj, hyp, "adjacent ÷ hypotenuse"], tan: [opp, adj, "opposite ÷ adjacent"] };
+  const [n, d, rule] = R[fn];
+  const ans = frac(n, d);
+  return finish(`Right triangle: opposite = ${opp}, adjacent = ${adj}, hypotenuse = ${hyp}. ${fn} A = ?`, ans,
+    [frac(adj, hyp), frac(opp, hyp), frac(opp, adj), frac(adj, opp), frac(hyp, opp), frac(hyp, adj)], `${fn} A = ${rule} = ${n}/${d}.`);
+}
+function gT4() {
+  const a = pickOf([10, 15, 20, 25, 30, 35, 40, 50, 55, 60, 65, 70, 75]);
+  const [f, g] = pickOf([["sin", "cos"], ["cos", "sin"], ["tan", "cot"], ["cot", "tan"]]);
+  const ans = 90 - a;
+  return num(`${f} ${a}° = ${g} (?)`, ans, [a, 180 - a, ans + 10, ans - 10, a + 15], `${f} θ = ${g} (90° − θ). So ${f} ${a}° = ${g} ${ans}°.`, x => x + "°");
+}
+const RAD = [[30, "π/6"], [45, "π/4"], [60, "π/3"], [90, "π/2"], [120, "2π/3"], [135, "3π/4"], [150, "5π/6"], [180, "π"], [270, "3π/2"], [360, "2π"]];
+function gT5() {
+  const [deg, rad] = pickOf(RAD);
+  if (Math.random() < .5) return finish(`${deg}° in radians = ?`, rad, shuffle(RAD.map(r => r[1])), `180° = π radians, so ${deg}° = ${deg}/180 × π = ${rad}.`);
+  return finish(`${rad} radians in degrees = ?`, deg + "°", shuffle(RAD.map(r => r[0] + "°")), `π radians = 180°, so ${rad} radians = ${deg}°.`);
+}
+function gT6() {
+  const c = ri(0, 2);
+  if (c === 0) {
+    const d = pickOf([10, 20, 30, 40, 50]);
+    return finish(`A shadow is ${d} m long when the Sun's elevation is 45°. Height of the object?`, `${d} m`,
+      [`${d}√3 m`, `${d}/√3 m`, `${2 * d} m`, `${d / 2} m`], `tan 45° = 1 = height / ${d}, so the height is ${d} m.`);
+  }
+  const k = pickOf([5, 10, 15, 20, 25, 30]);
+  if (c === 1) return finish(`You stand ${k}√3 m from a tower's base and see its top at 30° elevation. Tower height?`, `${k} m`,
+    [`${k}√3 m`, `${3 * k} m`, `${k}/√3 m`, `${2 * k} m`], `tan 30° = 1/√3 = height / (${k}√3), so height = ${k} m.`);
+  return finish(`You stand ${k} m from a tower's base and see its top at 60° elevation. Tower height?`, `${k}√3 m`,
+    [`${k} m`, `${k}/√3 m`, `${3 * k} m`, `${2 * k} m`], `tan 60° = √3 = height / ${k}, so height = ${k}√3 m.`);
+}
+function gPr2() {
+  let r = ri(2, 9), b = ri(2, 9); while (r === b) b = ri(2, 9);
+  const ans = frac(r, r + b);
+  return finish(`A bag has ${r} red and ${b} blue balls. P(red) for one draw?`, ans,
+    [frac(b, r + b), frac(r, b), frac(r + 1, r + b), frac(1, r + b), frac(r, r + b + 1)],
+    `${r} of the ${r + b} balls are red, so P(red) = ${r}/${r + b}` + (ans === r + "/" + (r + b) ? "." : `, which simplifies to ${ans}.`));
+}
+function gPr3() {
+  const n = ri(2, 6), ans = 2 ** n;
+  return num(`A fair coin is tossed ${n} times. How many different outcomes are possible?`, ans, [2 * n, n * n, ans - 1, ans + 2, ans * 2],
+    `Each toss has 2 outcomes, so ${n} tosses give 2${sup(n)} = ${ans} outcomes.`);
+}
+/* ---END-GEN--- */
+
+const STAGES = [
+  { name: "Foundations", note: "Whole-number arithmetic", gen: [g11, g12, g13, g14, g15] },
+  { name: "Fractions & Percent", note: "Parts of a whole", gen: [g21, g22, g23, g24, g25] },
+  { name: "Algebra & Geometry", note: "Unknowns, shapes, distances", gen: [g31, g32, g33, g34, g35] },
+  { name: "Challenge", note: "Calculus, patterns, chance", gen: [g41, g42, g43, g44, g45] }
+];
+const ALL_GENS = [].concat(...STAGES.map(s => s.gen));
+const TOPICS = [
+  { id: "trig", name: "Trigonometry", tag: "sin θ", gen: [gT1, gT1, gT2, gT3, gT4, gT5, gT6] },
+  { id: "arith", name: "Arithmetic", tag: "+ −", gen: [g11, g12, g13, g14, g15] },
+  { id: "frac", name: "Fractions & Percent", tag: "½ %", gen: [g21, g22, g23, g24, g25] },
+  { id: "alg", name: "Algebra", tag: "x²", gen: [g31, g33, g44] },
+  { id: "geo", name: "Geometry", tag: "∠", gen: [g32, g34, g35] },
+  { id: "calc", name: "Calculus & Series", tag: "∫", gen: [g41, g42, g45] },
+  { id: "prob", name: "Probability", tag: "P(A)", gen: [g43, gPr2, gPr3] },
+  { id: "mix", name: "Mixed", tag: "∑", gen: ALL_GENS.concat([gT1, gT2, gT3, gT6]) }
+];
+function freshQuestions(i) {
+  // cycle the level's generators until LEVEL_Q distinct questions are collected
+  const gens = STAGES[i].gen, out = [], seen = new Set();
+  for (let t = 0; out.length < LEVEL_Q && t < 400; t++) {
+    const q = gens[t % gens.length]();
+    if (!q || seen.has(q.q)) continue;
+    seen.add(q.q); out.push(q);
+  }
+  while (out.length < LEVEL_Q) out.push(gens[out.length % gens.length]());
+  return out;
+}
+
+const LEVEL_Q = 10, CHAP_Q = 10, PASS = 6;
+const KEY = "maths-ladder-v1";
+const CHEERS = ["Great job!", "Nailed it!", "Yes! Thumbs up!", "Brilliant!", "You're on fire!", "Super smart!"];
+const AI_TIERS = [
+  { name: "Rookie", p: 0.55 },
+  { name: "Sharp", p: 0.7 },
+  { name: "Expert", p: 0.85 },
+  { name: "Genius", p: 0.95 }
+];
+let state = { scores: [null, null, null, null], stage: 0, mode: "practice", section: "quiz", fast: { topic: "trig", secs: 60 }, best: {}, chap: {} };
+let run = null; // { stage, i, picked, results: [], qs: [], vs: null | { you, ai, lvYou, lvAi } }
+let shownYou = 0, shownAi = 0;
+
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.scores) && s.scores.length === 4) state = s; } catch (e) {}
+if (state.qv !== 2) { state.scores = [null, null, null, null]; state.chap = {}; state.qv = 2; }
+if (!["practice", "vs", "fast"].includes(state.mode)) state.mode = "practice";
+if (!state.fast || typeof state.fast !== "object") state.fast = { topic: "trig", secs: 60 };
+if (!state.best || typeof state.best !== "object") state.best = {};
+if (state.section !== "chapters") state.section = "quiz";
+if (!state.chap || typeof state.chap !== "object") state.chap = {};
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
+
+/* ---------- Maths backdrop ---------- */
+const LEVEL_TAGS = ["+ −", "½ %", "x²", "∫"];
+const SYMS = ["π", "∑", "√", "∫", "÷", "×", "≠", "∞", "θ", "x²", "Δ", "%", "±", "≈", "∂", "3.14", "e", "∠", "f(x)", "a²+b²"];
+function buildBackdrop() {
+  const bg = document.getElementById("mathbg");
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 800 200");
+  svg.setAttribute("preserveAspectRatio", "none");
+  const mk = (cls, d) => { const p = document.createElementNS(NS, "path"); if (cls) p.setAttribute("class", cls); p.setAttribute("d", d); svg.append(p); };
+  let sin = "", cos = "";
+  for (let x = 0; x <= 800; x += 8) {
+    const t = (x / 800) * Math.PI * 4;
+    sin += (x ? "L" : "M") + x + " " + (110 - Math.sin(t) * 55).toFixed(1);
+    cos += (x ? "L" : "M") + x + " " + (110 - Math.cos(t) * 40).toFixed(1);
+  }
+  mk("", sin); mk("b", cos);
+  bg.append(svg);
+  SYMS.forEach((s, i) => {
+    const n = el("span", "sym" + (i % 4 === 3 ? " alt" : ""), s);
+    n.style.left = ((i * 37 + 6) % 92) + "%";
+    n.style.top = ((i * 53 + 4) % 86) + "%";
+    n.style.fontSize = (22 + ((i * 17) % 44)) + "px";
+    n.style.setProperty("--d", (12 + (i % 7) * 2) + "s");
+    n.style.animationDelay = (-i * 1.3) + "s";
+    bg.append(n);
+  });
+}
+
+/* ---------- The kid's voice (browser speech, no downloads) ---------- */
+const synth = (typeof window !== "undefined" && window.speechSynthesis && typeof SpeechSynthesisUtterance !== "undefined") ? window.speechSynthesis : null;
+let soundOn = true;
+try { soundOn = localStorage.getItem("maths-ladder-sound") !== "off"; } catch (e) {}
+let voice = null;
+function pickVoice() {
+  if (!synth) return;
+  try {
+    const vs = synth.getVoices();
+    voice = vs.find(v => /^en[-_]IN/i.test(v.lang)) || vs.find(v => /^en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+  } catch (e) {}
+}
+if (synth) { pickVoice(); try { synth.onvoiceschanged = pickVoice; } catch (e) {} }
+function stopVoice() { try { if (synth) synth.cancel(); } catch (e) {} }
+// Turns symbols into words so the voice reads maths naturally.
+function speakable(s) {
+  return s
+    .replace(/d\/dx/g, "d by d x")
+    .replace(/([⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (m) => {
+      if (m === "²") return " squared";
+      if (m === "³") return " cubed";
+      return " to the power " + m.split("").map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c)).join("");
+    })
+    .replace(/₹(\d+)/g, "$1 rupees")
+    .replace(/(\d)\/(\d)/g, "$1 over $2")
+    .replace(/\)\/(\d)/g, " over $1")
+    .replace(/ \/ /g, " over ")
+    .replace(/n\(/g, "n times ")
+    .replace(/√/g, " square root of ")
+    .replace(/π/g, " pi ")
+    .replace(/½/g, " half ")
+    .replace(/…/g, " and so on up to ")
+    .replace(/[×]/g, " times ")
+    .replace(/÷/g, " divided by ")
+    .replace(/[−]/g, " minus ")
+    .replace(/\+/g, " plus ")
+    .replace(/=/g, " equals ")
+    .replace(/%/g, " percent")
+    .replace(/[()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function say(text, force) {
+  if (!synth || (!soundOn && !force)) return;
+  try {
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(speakable(text));
+    if (voice) { u.voice = voice; u.lang = voice.lang; } else { u.lang = "en-US"; }
+    u.rate = 0.95;
+    u.pitch = 1.3;
+    synth.speak(u);
+  } catch (e) {}
+}
+function syncSoundBtn() {
+  const b = document.getElementById("soundBtn");
+  b.hidden = !synth;
+  b.textContent = soundOn ? "Voice on" : "Voice off";
+  b.setAttribute("aria-pressed", String(soundOn));
+}
+document.getElementById("soundBtn").addEventListener("click", () => {
+  soundOn = !soundOn;
+  try { localStorage.setItem("maths-ladder-sound", soundOn ? "on" : "off"); } catch (e) {}
+  syncSoundBtn();
+  if (soundOn) say("Voice is on. Let's do some maths!"); else stopVoice();
+});
+syncSoundBtn();
+
+/* ---------- The kid and the confetti ---------- */
+const kid = document.getElementById("kid");
+const bubble = document.getElementById("bubble");
+function hideKid() { stopVoice(); kid.classList.remove("up"); document.body.classList.remove("kid-pad"); }
+function showKid(ok, text) {
+  kid.className = "kid " + (ok ? "happy" : "think");
+  bubble.className = "bubble " + (ok ? "ok" : "no");
+  bubble.textContent = text;
+  document.body.classList.add("kid-pad");
+  void kid.offsetWidth;
+  requestAnimationFrame(() => kid.classList.add("up"));
+  if (ok) burst();
+}
+function burst() {
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = document.getElementById("confetti");
+  const cols = ["#f2b84b", "#5fcf9a", "#4aa8ff", "#ff8fb1", "#c9a7ff"];
+  for (let i = 0; i < 36; i++) {
+    const s = document.createElement("i");
+    s.style.left = (Math.random() * 100) + "%";
+    s.style.background = cols[i % cols.length];
+    s.style.width = (6 + Math.random() * 6) + "px";
+    s.style.height = (8 + Math.random() * 8) + "px";
+    s.style.setProperty("--dx", (Math.random() * 160 - 80) + "px");
+    s.style.setProperty("--r", (Math.random() * 720 - 360) + "deg");
+    s.style.animationDuration = (1.3 + Math.random()) + "s";
+    s.style.animationDelay = (Math.random() * .25) + "s";
+    box.append(s);
+    setTimeout(() => s.remove(), 2900);
+  }
+}
+
+/* ---------- Scoreboard for Vs AI mode ---------- */
+function showBoard(on) {
+  document.getElementById("boardYou").hidden = !on;
+  document.getElementById("boardAi").hidden = !on;
+  document.body.classList.toggle("vs", on);
+}
+function updateBoard(bump) {
+  if (!run || !run.vs) return;
+  const set = (id, v) => {
+    const n = document.getElementById(id);
+    if (n.textContent !== String(v)) {
+      n.textContent = String(v);
+      if (bump) { n.classList.remove("bump"); void n.offsetWidth; n.classList.add("bump"); }
+    }
+  };
+  set("youScore", shownYou);
+  set("aiScore", shownAi);
+  document.getElementById("youLabel").textContent = "You";
+  document.getElementById("aiLabel").textContent = "AI · " + AI_TIERS[run.stage].name;
+  document.getElementById("boardYou").classList.toggle("lead", shownYou > shownAi);
+  document.getElementById("boardAi").classList.toggle("lead", shownAi > shownYou);
+}
+function revealAi() {
+  if (!run || !run.vs || run.picked === null || run.aiShown) return;
+  clearTimeout(run.aiTimer);
+  run.aiShown = true;
+  shownAi = run.vs.ai;
+  updateBoard(true);
+  const l = document.querySelector(".ai-line");
+  if (l) { l.textContent = run.aiText; l.className = "ai-line" + (run.aiOk ? " ok" : ""); }
+}
+function startVs() { startStage(0, { you: 0, ai: 0, lvYou: 0, lvAi: 0 }); }
+
+/* ---------- Screens ---------- */
+/* ---------- Class 10 Maths chapters ---------- */
+const CH10 = [
+  { n: 1, title: "Real Numbers", unit: "Number Systems",
+    summary: "This chapter builds on whole numbers and rationals. Euclid's division lemma, a = bq + r with 0 ≤ r < b, gives a step-by-step method for the HCF of two numbers. The Fundamental Theorem of Arithmetic says every composite number splits into primes in only one way, apart from order, and this gives quick HCF and LCM. Proof by contradiction shows that numbers like √2, √3 and √5 are irrational. Finally, a rational number p/q in lowest terms has a terminating decimal exactly when q has no prime factors except 2 and 5.",
+    points: ["Euclid's lemma: a = bq + r, 0 ≤ r < b. Repeat until the remainder is 0; the last divisor is the HCF.", "HCF takes the smallest power of each common prime; LCM takes the greatest power of every prime.", "For two numbers a and b: HCF(a, b) × LCM(a, b) = a × b.", "p/q in lowest terms terminates only if q = 2ᵐ × 5ⁿ; otherwise the decimal repeats."] },
+  { n: 2, title: "Polynomials", unit: "Algebra",
+    summary: "A zero of a polynomial is a value of x that makes it 0, and on a graph it is where the curve meets the x-axis. A linear polynomial has one zero, and the graph of a quadratic is a parabola that can cut the x-axis at 0, 1 or 2 points, so it has at most two zeros. The key result links zeros to coefficients: for ax² + bx + c with zeros α and β, the sum is −b/a and the product is c/a. You can use this to check zeros, to build a quadratic from given zeros, and to find expressions like α² + β² without solving.",
+    points: ["A polynomial of degree n has at most n zeros.", "For ax² + bx + c: α + β = −b/a and αβ = c/a.", "A quadratic with zeros α and β is k[x² − (α + β)x + αβ].", "α² + β² = (α + β)² − 2αβ."] },
+  { n: 3, title: "Pair of Linear Equations in Two Variables", unit: "Algebra",
+    summary: "Two linear equations in x and y form a pair, and each is a straight line. If the lines cross, there is one solution and the pair is consistent. If they coincide, there are infinitely many solutions (consistent and dependent). If they are parallel, there is no solution (inconsistent). Comparing a₁/a₂, b₁/b₂ and c₁/c₂ tells you which case you have without drawing. Solve by substitution, elimination or cross-multiplication, and turn word problems about ages, digits, fractions and speeds into such pairs.",
+    points: ["a₁/a₂ ≠ b₁/b₂: exactly one solution.", "a₁/a₂ = b₁/b₂ = c₁/c₂: infinitely many solutions.", "a₁/a₂ = b₁/b₂ ≠ c₁/c₂: no solution.", "Elimination: make one variable's coefficients equal, then add or subtract."] },
+  { n: 4, title: "Quadratic Equations", unit: "Algebra",
+    summary: "A quadratic equation has the form ax² + bx + c = 0 with a ≠ 0, and its solutions are called roots. You can find them by factorising, by completing the square, or with the formula x = (−b ± √(b² − 4ac)) / 2a. The discriminant D = b² − 4ac decides the nature of the roots: two different real roots if D > 0, two equal real roots if D = 0, and no real roots if D < 0. Many word problems on numbers, areas, speeds and ages reduce to a quadratic, and you must reject any root that makes no sense in context, such as a negative length.",
+    points: ["Quadratic formula: x = (−b ± √D) / 2a with D = b² − 4ac.", "D > 0: two distinct real roots. D = 0: equal roots. D < 0: no real roots.", "Factorise by splitting the middle term into two terms whose product is a × c.", "Always check roots against the story in a word problem."] },
+  { n: 5, title: "Arithmetic Progressions", unit: "Algebra",
+    summary: "An arithmetic progression (AP) is a list of numbers where each term is the previous one plus a fixed common difference d. If the first term is a, the nth term is a + (n − 1)d. The sum of the first n terms is n/2 × [2a + (n − 1)d], or n/2 × (a + l) when the last term l is known. You can use these to find a missing term, count the terms, or sum a pattern such as multiples of a number or savings that grow by a fixed amount each month.",
+    points: ["aₙ = a + (n − 1)d, and d = aₙ₊₁ − aₙ.", "Sₙ = n/2 [2a + (n − 1)d].", "Sₙ = n/2 (a + l) when the last term l is known.", "aₙ = Sₙ − Sₙ₋₁."] },
+  { n: 6, title: "Triangles", unit: "Geometry",
+    summary: "Two figures are similar when they have the same shape: equal corresponding angles and proportional corresponding sides. The Basic Proportionality (Thales) Theorem says a line parallel to one side of a triangle divides the other two sides in the same ratio, and its converse is also true. Triangles can be proved similar by AA, SSS or SAS criteria. The ratio of the areas of two similar triangles is the square of the ratio of their corresponding sides. Pythagoras' theorem and its converse follow from similarity.",
+    points: ["DE ∥ BC gives AD/DB = AE/EC.", "Similarity tests: AA, SSS (sides proportional), SAS (one equal angle between proportional sides).", "Area ratio = (side ratio)² for similar triangles.", "In a right triangle, hypotenuse² = sum of squares of the other two sides."] },
+  { n: 7, title: "Coordinate Geometry", unit: "Coordinate Geometry",
+    summary: "Points on a plane are described by coordinates (x, y). The distance formula gives the length between two points, √((x₂ − x₁)² + (y₂ − y₁)²), and comes straight from Pythagoras' theorem. You can use it to show that points are collinear, or that a quadrilateral is a square, rectangle or rhombus, or to find a point at a certain distance. The section formula finds the point that divides a line segment in a given ratio m : n, and the midpoint is the special case m = n.",
+    points: ["Distance = √((x₂ − x₁)² + (y₂ − y₁)²).", "Section formula (internal, ratio m : n): ((mx₂ + nx₁)/(m + n), (my₂ + ny₁)/(m + n)).", "Midpoint: ((x₁ + x₂)/2, (y₁ + y₂)/2).", "Distance of (x, y) from the origin is √(x² + y²)."] },
+  { n: 8, title: "Introduction to Trigonometry", unit: "Trigonometry",
+    summary: "In a right triangle, the trigonometric ratios of an acute angle A compare its sides: sin A = opposite/hypotenuse, cos A = adjacent/hypotenuse and tan A = opposite/adjacent, with cosec, sec and cot as the reciprocals. The ratios depend only on the angle, not on the size of the triangle. You should know the values at 0°, 30°, 45°, 60° and 90°. Complementary angles give sin(90° − A) = cos A. Three identities, sin²A + cos²A = 1, 1 + tan²A = sec²A and 1 + cot²A = cosec²A, are used to simplify and prove expressions.",
+    points: ["sin A = opp/hyp, cos A = adj/hyp, tan A = opp/adj = sin A / cos A.", "Values at 0°, 30°, 45°, 60°, 90°: sin = 0, 1/2, 1/√2, √3/2, 1 and cos is the same list reversed.", "sin(90° − A) = cos A and tan(90° − A) = cot A.", "sin²A + cos²A = 1; 1 + tan²A = sec²A; 1 + cot²A = cosec²A."] },
+  { n: 9, title: "Some Applications of Trigonometry", unit: "Trigonometry",
+    summary: "This chapter uses trigonometric ratios to find heights and distances that cannot be measured directly. The line of sight runs from the eye to the object. The angle of elevation is the angle above the horizontal when you look up, and the angle of depression is the angle below the horizontal when you look down. Draw a neat figure, mark the right triangle, pick the ratio that links the known and unknown sides (often tan for height and distance), and use the standard values for 30°, 45° and 60°.",
+    points: ["Angle of elevation: looking up from the horizontal. Angle of depression: looking down from the horizontal.", "Angle of depression from the top equals angle of elevation from the bottom (alternate angles).", "tan θ = height / horizontal distance.", "Use √3 ≈ 1.732 and √2 ≈ 1.414 if a decimal answer is wanted."] },
+  { n: 10, title: "Circles", unit: "Geometry",
+    summary: "A tangent touches a circle at exactly one point, called the point of contact, while a secant cuts it at two points. The key theorem is that the tangent at any point is perpendicular to the radius through that point. From a point outside a circle there are exactly two tangents, and they have equal lengths. From a point on the circle there is only one tangent, and from a point inside there is none. These facts, with Pythagoras' theorem, are used to find tangent lengths and angles.",
+    points: ["Tangent ⟂ radius at the point of contact.", "Two tangents from an external point are equal in length.", "Tangent length from a point at distance d from the centre: √(d² − r²).", "The centre lies on the angle bisector of the two tangents from an external point."] },
+  { n: 11, title: "Areas Related to Circles", unit: "Mensuration",
+    summary: "This chapter extends the circumference 2πr and the area πr² to parts of a circle. A sector is the region between two radii and an arc. For a sector of angle θ, the arc length is (θ/360) × 2πr and the area is (θ/360) × πr². A segment is the region between a chord and an arc, and the area of a minor segment is the sector area minus the area of the triangle formed by the radii and the chord. Problems then combine these with squares, rectangles and triangles, for example the area swept by a wiper or the shaded part of a design.",
+    points: ["Arc length = (θ/360) × 2πr.", "Area of sector = (θ/360) × πr².", "Area of minor segment = sector area − triangle area; for θ = 90° the triangle area is ½r².", "Use π = 22/7 when the radius is a multiple of 7, otherwise follow the question."] },
+  { n: 12, title: "Surface Areas and Volumes", unit: "Mensuration",
+    summary: "Here you meet solids made by joining or reshaping cubes, cuboids, cylinders, cones, spheres and hemispheres. For a combination, add the curved or surface areas that are exposed and the volumes that are included, and ignore faces that are joined together. When a solid is melted and recast, the volume stays the same, so you equate the volumes. A frustum is a cone with its top cut off by a plane parallel to the base, and it has its own volume and curved surface area formulas using the slant height.",
+    points: ["Cone: CSA = πrl, volume = ⅓πr²h, with l = √(r² + h²). Sphere: surface 4πr², volume ⁴⁄₃πr³. Hemisphere: CSA 2πr², volume ⅔πr³.", "Cylinder: CSA = 2πrh, volume = πr²h.", "Frustum: volume = (πh/3)(r₁² + r₂² + r₁r₂); CSA = πl(r₁ + r₂); l = √(h² + (r₁ − r₂)²).", "Recasting a solid: volume before = volume after."] },
+  { n: 13, title: "Statistics", unit: "Statistics and Probability",
+    summary: "Statistics describes grouped data with measures of central tendency. For grouped data the mean can be found directly (Σfx / Σf using class marks), by the assumed mean method, or by the step-deviation method. The mode uses the modal class, the one with the highest frequency: Mode = l + (f₁ − f₀)/(2f₁ − f₀ − f₂) × h. The median uses cumulative frequency: Median = l + (n/2 − cf)/f × h. A cumulative frequency curve (ogive) can also be drawn, and the point where the less-than and more-than ogives meet gives the median. The three averages are linked by Mode = 3 Median − 2 Mean for moderately skewed data.",
+    points: ["Class mark = (upper limit + lower limit)/2. Mean = Σfx / Σf.", "Median = l + ((n/2 − cf)/f) × h, where the median class is the first one with cumulative frequency ≥ n/2.", "Mode = l + ((f₁ − f₀)/(2f₁ − f₀ − f₂)) × h.", "Mode = 3 Median − 2 Mean (empirical relation)."] },
+  { n: 14, title: "Probability", unit: "Statistics and Probability",
+    summary: "The theoretical (classical) probability of an event E is P(E) = number of outcomes favourable to E divided by the total number of equally likely outcomes. A probability is always between 0 and 1: 0 for an impossible event and 1 for a sure event. An event and its complement add up to 1, so P(not E) = 1 − P(E). The chapter works through experiments with a coin, a die, two dice, a pack of 52 cards and bags of coloured balls, and stresses listing the sample space carefully.",
+    points: ["P(E) = favourable outcomes / total outcomes, when outcomes are equally likely.", "0 ≤ P(E) ≤ 1, and P(E) + P(not E) = 1.", "Two dice have 36 outcomes; a pack has 52 cards (4 suits, 13 cards each, 12 face cards).", "The sum of the probabilities of all outcomes of an experiment is 1."] }
+];
+
+/* Question bank per chapter. Row: [question, correct answer, wrong 1, wrong 2, wrong 3, explanation]. Each try draws 10 of the 20 at random and shuffles the options. */
+const CH_BANK = {
+  1: [
+    ["HCF of 26 and 91 is", "13", "7", "2", "1", "26 = 2 × 13 and 91 = 7 × 13, so the common prime factor is 13."],
+    ["LCM of 12 and 18 is", "36", "6", "72", "216", "12 = 2² × 3 and 18 = 2 × 3². Take the greatest powers: 2² × 3² = 36."],
+    ["For two positive integers a and b, HCF × LCM equals", "a × b", "a + b", "a − b", "a ÷ b", "The product of the HCF and LCM of two numbers equals the product of the numbers."],
+    ["Which of these is irrational?", "√7", "√49", "0.25", "22/7", "√49 = 7, 0.25 = 1/4 and 22/7 are rational. 7 is not a perfect square, so √7 is irrational."],
+    ["The decimal expansion of 3/8 is", "terminating", "non-terminating repeating", "non-terminating non-repeating", "cannot be found", "8 = 2³ has only the prime 2, so the decimal terminates (0.375)."],
+    ["In Euclid's division lemma a = bq + r, the remainder r satisfies", "0 ≤ r < b", "0 < r ≤ b", "r > b", "0 ≤ r ≤ b", "The remainder is at least 0 and strictly less than the divisor b."],
+    ["The prime factorisation of 140 is", "2² × 5 × 7", "2 × 5 × 14", "2³ × 5 × 7", "2² × 35", "140 = 4 × 35 = 2² × 5 × 7. Every factor must be prime."],
+    ["If HCF(a, 18) = 6 and LCM(a, 18) = 36, then a is", "12", "6", "36", "24", "a × 18 = 6 × 36 = 216, so a = 12."],
+    ["Which of these has a non-terminating repeating decimal expansion?", "1/7", "3/16", "7/25", "13/40", "16 = 2⁴, 25 = 5² and 40 = 2³ × 5 only have the primes 2 and 5. 7 does not, so 1/7 repeats."],
+    ["The product of a non-zero rational number and an irrational number is", "always irrational", "always rational", "sometimes rational", "always zero", "If r × x were rational (= q), then x = q/r would be rational, which is a contradiction."],
+    ["HCF of 72 and 108 is", "36", "18", "12", "72", "72 = 2³ × 3² and 108 = 2² × 3³. Take the smallest powers: 2² × 3² = 36."],
+    ["LCM of 15 and 20 is", "60", "5", "30", "300", "15 = 3 × 5 and 20 = 2² × 5. Take the greatest powers: 2² × 3 × 5 = 60."],
+    ["√2 is", "irrational", "rational", "an integer", "a terminating decimal", "√2 cannot be written as p/q, so it is irrational."],
+    ["The HCF of two consecutive positive integers is", "1", "2", "0", "their product", "Consecutive integers share no common factor other than 1."],
+    ["Which of these is a rational number?", "√36", "√5", "√11", "√3", "√36 = 6, which is rational. 5, 11 and 3 are not perfect squares."],
+    ["The exponent of 2 in the prime factorisation of 144 is", "4", "2", "3", "6", "144 = 16 × 9 = 2⁴ × 3²."],
+    ["Euclid's division lemma applied to 17 and 5 gives", "17 = 5 × 3 + 2", "17 = 5 × 2 + 7", "17 = 5 × 4 − 3", "17 = 5 × 3 + 4", "5 × 3 = 15 and 17 − 15 = 2. The remainder 2 is less than 5."],
+    ["The decimal expansion of 7/20 terminates after how many places?", "2", "1", "3", "4", "20 = 2² × 5, so the larger exponent is 2. Indeed 7/20 = 0.35."],
+    ["The sum of a rational and an irrational number is", "always irrational", "always rational", "sometimes rational", "always zero", "If the sum were rational, the irrational number would equal a difference of rationals, which is rational. That is impossible."],
+    ["6ⁿ ends with the digit 0 for", "no value of n", "every n", "even n only", "odd n only", "A number ending in 0 is divisible by 5. 6ⁿ = 2ⁿ × 3ⁿ has no factor 5."]
+  ],
+  2: [
+    ["A quadratic polynomial has at most how many zeros?", "2", "1", "3", "4", "A polynomial of degree n has at most n zeros, and a quadratic has degree 2."],
+    ["The sum of the zeros of x² − 7x + 12 is", "7", "−7", "12", "−12", "Sum of zeros = −b/a = −(−7)/1 = 7."],
+    ["The product of the zeros of 2x² − 5x + 3 is", "3/2", "5/2", "−3/2", "−5/2", "Product of zeros = c/a = 3/2."],
+    ["The zeros of x² − 9 are", "3 and −3", "9 and −9", "3 only", "no real zeros", "x² − 9 = (x − 3)(x + 3), so the zeros are 3 and −3."],
+    ["A quadratic polynomial with zeros 2 and −3 is", "x² + x − 6", "x² − x − 6", "x² + x + 6", "x² − 5x + 6", "Sum = −1 and product = −6, so x² − (sum)x + product = x² + x − 6."],
+    ["The graph of y = x² + 4 meets the x-axis at", "no point", "one point", "two points", "three points", "The vertex (0, 4) is above the x-axis and the parabola opens upwards, so it never reaches the axis."],
+    ["If the zeros of 3x² + 6x − 9 are α and β, then α + β is", "−2", "2", "−3", "3", "α + β = −b/a = −6/3 = −2."],
+    ["If 2 is a zero of x² − 5x + k, then k is", "6", "−6", "3", "10", "Put x = 2: 4 − 10 + k = 0, so k = 6."],
+    ["A cubic polynomial can have at most how many zeros?", "3", "1", "2", "4", "The number of zeros cannot exceed the degree, and a cubic has degree 3."],
+    ["If α + β = 4 and αβ = 3, then α² + β² is", "10", "7", "19", "22", "α² + β² = (α + β)² − 2αβ = 16 − 6 = 10."],
+    ["The degree of 5x³ − 2x + 7 is", "3", "5", "1", "7", "The degree is the highest power of x, which is 3."],
+    ["The zero of the linear polynomial 3x − 12 is", "4", "−4", "12", "3", "3x − 12 = 0 gives x = 4."],
+    ["The value of x² − 3x + 2 at x = 3 is", "2", "0", "4", "6", "9 − 9 + 2 = 2."],
+    ["The product of the zeros of x² − 5x + 6 is", "6", "−6", "5", "−5", "Product = c/a = 6."],
+    ["The sum of the zeros of 2x² + 8x + 6 is", "−4", "4", "−3", "3", "Sum = −b/a = −8/2 = −4."],
+    ["A quadratic polynomial whose zeros are 1 and 4 is", "x² − 5x + 4", "x² + 5x + 4", "x² − 5x − 4", "x² − 3x + 4", "Sum = 5 and product = 4, so x² − 5x + 4."],
+    ["If −1 is a zero of x² + 3x + k, then k is", "2", "−2", "4", "3", "Put x = −1: 1 − 3 + k = 0, so k = 2."],
+    ["The graph of y = x² − 4 cuts the x-axis at", "x = 2 and x = −2", "x = 4 only", "x = 0 only", "no point", "x² − 4 = (x − 2)(x + 2), so the zeros are 2 and −2."],
+    ["The graph of a linear polynomial is a", "straight line", "parabola", "circle", "curve with two turns", "A polynomial of degree 1 has a straight-line graph."],
+    ["If the sum and product of the zeros of a quadratic are −3 and 2, the polynomial is", "x² + 3x + 2", "x² − 3x + 2", "x² + 3x − 2", "x² − 2x − 3", "x² − (sum)x + product = x² + 3x + 2."]
+  ],
+  3: [
+    ["The solution of x + y = 5 and x − y = 1 is", "x = 3, y = 2", "x = 2, y = 3", "x = 4, y = 1", "x = 1, y = 4", "Adding the equations gives 2x = 6, so x = 3 and y = 2."],
+    ["If the lines of a pair of linear equations are parallel, the pair has", "no solution", "one solution", "two solutions", "infinitely many solutions", "Parallel lines never meet, so the pair is inconsistent."],
+    ["The pair 2x + 3y = 7 and 4x + 6y = 14 has", "infinitely many solutions", "a unique solution", "no solution", "exactly two solutions", "All the ratios are 1/2, so the lines coincide."],
+    ["For which value of k does 2x + ky = 5, 3x + 2y = 7 not have a unique solution?", "k = 4/3", "k = 3", "k = 2", "k = 5/2", "Not unique when 2/3 = k/2, so k = 4/3."],
+    ["The graphs of x = 3 and y = 2 meet at", "(3, 2)", "(2, 3)", "(0, 0)", "(3, 0)", "x = 3 is a vertical line and y = 2 a horizontal line. They cross at (3, 2)."],
+    ["The sum of two numbers is 15 and their difference is 3. The larger number is", "9", "6", "12", "8", "x + y = 15 and x − y = 3 give 2x = 18, so x = 9."],
+    ["A father is 3 times as old as his son, and the sum of their ages is 48. The son's age is", "12", "16", "36", "9", "s + 3s = 48, so 4s = 48 and s = 12."],
+    ["Solving 3x − y = 7 and x + y = 5, the value of x is", "3", "2", "4", "5", "Adding: 4x = 12, so x = 3. Then y = 2."],
+    ["If a₁/a₂ ≠ b₁/b₂, the pair of equations is", "consistent with a unique solution", "inconsistent", "consistent with infinitely many solutions", "dependent", "Unequal ratios mean the lines intersect at exactly one point."],
+    ["2 pencils and 3 pens cost ₹13, and 1 pencil and 1 pen cost ₹5. The cost of a pen is", "₹3", "₹2", "₹4", "₹5", "From p + q = 5, p = 5 − q. Then 10 − 2q + 3q = 13, so q = 3."],
+    ["The pair x + y = 4 and 2x + 2y = 8 is", "consistent, with infinitely many solutions", "inconsistent", "consistent, with a unique solution", "not a pair of linear equations", "The second equation is twice the first, so the lines coincide."],
+    ["The solution of 2x + y = 7 and x − y = 2 is", "x = 3, y = 1", "x = 2, y = 3", "x = 4, y = −1", "x = 1, y = 5", "Adding gives 3x = 9, so x = 3 and y = 1."],
+    ["The lines x + 2y = 4 and 2x + 4y = 9 are", "parallel", "coincident", "intersecting at one point", "perpendicular", "1/2 = 2/4 ≠ 4/9, so the lines are parallel."],
+    ["If the graphs of two linear equations intersect at one point, the pair has", "exactly one solution", "no solution", "infinitely many solutions", "exactly two solutions", "The common point is the unique solution."],
+    ["The perimeter of a rectangle is 30 cm and its length is 3 cm more than its width. The width is", "6 cm", "9 cm", "7 cm", "12 cm", "2(w + w + 3) = 30 gives 4w + 6 = 30, so w = 6."],
+    ["If x + y = 10 and x − y = 4, then xy is", "21", "40", "24", "14", "x = 7 and y = 3, so xy = 21."],
+    ["The value of x in 3x + 2y = 5 and 2x − 3y = −1 is", "1", "2", "0", "−1", "Multiply by 3 and 2 and add: 13x = 13, so x = 1 (and y = 1)."],
+    ["For which k does 3x + 2y = 4 and 6x + 4y = k have infinitely many solutions?", "k = 8", "k = 4", "k = 6", "k = 12", "The second must be twice the first, so k = 8."],
+    ["The pair a₁x + b₁y + c₁ = 0 and a₂x + b₂y + c₂ = 0 is inconsistent when", "a₁/a₂ = b₁/b₂ ≠ c₁/c₂", "a₁/a₂ ≠ b₁/b₂", "a₁/a₂ = b₁/b₂ = c₁/c₂", "a₁/a₂ = c₁/c₂ ≠ b₁/b₂", "Equal x and y ratios with a different constant ratio mean parallel lines."],
+    ["A taxi charges a fixed fare plus a rate per km. For 10 km the fare is ₹105 and for 15 km it is ₹155. The rate per km is", "₹10", "₹5", "₹15", "₹20", "5 extra km cost ₹50, so the rate is ₹10 per km."]
+  ],
+  4: [
+    ["The roots of x² − 5x + 6 = 0 are", "2 and 3", "−2 and −3", "1 and 6", "−1 and −6", "x² − 5x + 6 = (x − 2)(x − 3)."],
+    ["The discriminant of 2x² − 4x + 3 = 0 is", "−8", "8", "40", "−40", "D = b² − 4ac = 16 − 24 = −8."],
+    ["If the discriminant is 0, the roots are", "real and equal", "real and distinct", "not real", "irrational and distinct", "D = 0 gives x = −b/2a twice."],
+    ["Which of these is a quadratic equation?", "x(x + 1) = 6", "(x + 2)² = x² + 4", "x³ − 2x = 0", "3x + 5 = 0", "x(x + 1) = 6 becomes x² + x − 6 = 0. In (x + 2)² = x² + 4 the x² terms cancel."],
+    ["For which positive k does x² + kx + 9 = 0 have equal roots?", "6", "3", "9", "12", "D = k² − 36 = 0, so k = 6 (positive)."],
+    ["The sum of the roots of 2x² − 9x + 4 = 0 is", "9/2", "−9/2", "2", "4", "Sum of roots = −b/a = 9/2."],
+    ["The equation x² + 6x + 9 = 0 has", "x = −3 (repeated)", "x = 3 (repeated)", "x = 3 and x = −3", "no real roots", "x² + 6x + 9 = (x + 3)², so x = −3 twice."],
+    ["The quadratic formula is", "x = (−b ± √(b² − 4ac)) / 2a", "x = (b ± √(b² − 4ac)) / 2a", "x = (−b ± √(b² + 4ac)) / 2a", "x = (−b ± √(b² − 4ac)) / a", "This formula comes from completing the square on ax² + bx + c = 0."],
+    ["Two consecutive positive integers have product 56. They are", "7 and 8", "6 and 7", "8 and 9", "5 and 6", "x(x + 1) = 56 gives x² + x − 56 = 0, so (x − 7)(x + 8) = 0 and x = 7."],
+    ["The equation x² + 2x + 5 = 0 has", "no real roots", "two equal roots", "two distinct real roots", "one real root and one imaginary root", "D = 4 − 20 = −16, which is negative."],
+    ["The standard form of a quadratic equation is", "ax² + bx + c = 0, a ≠ 0", "ax + b = 0", "ax³ + bx² + c = 0", "ax² + bx + c = 0, a = 0", "A quadratic has degree 2, so a must not be zero."],
+    ["The discriminant of x² − 4x + 4 = 0 is", "0", "8", "16", "−4", "b² − 4ac = 16 − 16 = 0."],
+    ["If the discriminant of a quadratic is positive, its roots are", "real and distinct", "real and equal", "not real", "both zero", "D > 0 gives two different real roots."],
+    ["The roots of 2x² − 7x + 3 = 0 are", "3 and 1/2", "−3 and −1/2", "3 and −1/2", "1 and 3/2", "2x² − 7x + 3 = (2x − 1)(x − 3)."],
+    ["For x² + kx + 9 = 0 to have equal roots (k > 0), k is", "6", "3", "9", "18", "D = k² − 36 = 0, so k = 6."],
+    ["The sum of the roots of 3x² − 9x + 2 = 0 is", "3", "−3", "9", "2/3", "Sum = −b/a = 9/3 = 3."],
+    ["The product of two consecutive positive integers is 56. The smaller one is", "7", "8", "6", "9", "7 × 8 = 56."],
+    ["The quadratic formula gives the roots as", "(−b ± √(b² − 4ac)) / 2a", "(b ± √(b² − 4ac)) / 2a", "(−b ± √(b² + 4ac)) / 2a", "(−b ± √(b² − 4ac)) / a", "This is the standard formula."],
+    ["The roots of x² − 7x + 12 = 0 are", "3 and 4", "−3 and −4", "2 and 6", "1 and 12", "(x − 3)(x − 4) = 0."],
+    ["The equation 2x² − 4x + 2 = 0 has", "two equal real roots", "two distinct real roots", "no real roots", "three real roots", "D = 16 − 16 = 0."]
+  ],
+  5: [
+    ["The common difference of 3, 7, 11, 15, … is", "4", "3", "−4", "7", "7 − 3 = 4, and the same difference holds throughout."],
+    ["The 10th term of the AP 5, 8, 11, … is", "32", "35", "29", "30", "a = 5, d = 3, so a₁₀ = 5 + 9 × 3 = 32."],
+    ["The sum of the first 10 natural numbers is", "55", "45", "50", "100", "S = 10 × 11 / 2 = 55."],
+    ["The nth term of an AP with first term a and common difference d is", "a + (n − 1)d", "a + nd", "a − (n − 1)d", "a + (n + 1)d", "Going from the first term to the nth, the difference d is added (n − 1) times."],
+    ["Which of these is not an AP?", "1, 2, 4, 8, …", "2, 4, 6, 8, …", "5, 5, 5, 5, …", "10, 7, 4, 1, …", "The differences in 1, 2, 4, 8 are 1, 2, 4, which are not equal."],
+    ["The 30th term of the AP 10, 7, 4, … is", "−77", "−80", "−87", "−74", "a = 10, d = −3, so a₃₀ = 10 + 29 × (−3) = −77."],
+    ["The sum of the first 20 terms of the AP with a = 2 and d = 3 is", "610", "590", "630", "1220", "S₂₀ = 20/2 × [4 + 19 × 3] = 10 × 61 = 610."],
+    ["The 7th term of an AP is 20 and the 11th term is 36. The common difference is", "4", "3", "5", "16", "4d = 36 − 20 = 16, so d = 4."],
+    ["The number of terms in the AP 7, 13, 19, …, 205 is", "34", "33", "35", "32", "7 + (n − 1) × 6 = 205 gives n − 1 = 33, so n = 34."],
+    ["The sum of the first n odd natural numbers is", "n²", "n(n + 1)", "2n", "n² + 1", "1 + 3 + … + (2n − 1) = n²."],
+    ["The common difference of 7, 10, 13, 16, ... is", "3", "7", "−3", "10", "10 − 7 = 3."],
+    ["The 10th term of 2, 5, 8, ... is", "29", "32", "27", "30", "a + 9d = 2 + 27 = 29."],
+    ["The nth term of an AP is", "a + (n − 1)d", "a + nd", "a + (n + 1)d", "a × rⁿ⁻¹", "The first term is a and each step adds d."],
+    ["Which list is an AP?", "5, 10, 15, 20", "1, 2, 4, 8", "1, 4, 9, 16", "2, 3, 5, 8", "Only 5, 10, 15, 20 has a constant difference (5)."],
+    ["The 5th term of an AP is 20 and the common difference is 3. The first term is", "8", "5", "11", "17", "a + 4 × 3 = 20, so a = 8."],
+    ["The sum of the first n terms of an AP is", "n/2 [2a + (n − 1)d]", "n [a + (n − 1)d]", "n/2 [a + nd]", "n/2 [2a − (n − 1)d]", "This is the standard sum formula."],
+    ["The number of terms in 3, 7, 11, ..., 47 is", "12", "11", "13", "10", "(47 − 3)/4 + 1 = 12."],
+    ["The sum of the first 20 terms of 1, 3, 5, ... is", "400", "200", "420", "40", "The sum of the first n odd numbers is n², so 20² = 400."],
+    ["If a, b, c are in AP, then b equals", "(a + c) / 2", "a + c", "ac", "√(ac)", "b − a = c − b, so 2b = a + c."],
+    ["The sum of the first 15 natural numbers is", "120", "105", "135", "150", "15 × 16 / 2 = 120."]
+  ],
+  6: [
+    ["In △ABC, DE ∥ BC with D on AB and E on AC. By the Basic Proportionality Theorem,", "AD/DB = AE/EC", "AD/AB = AE/EC", "AD/DB = EC/AE", "AD/AB = DB/AC", "A line parallel to one side divides the other two sides in the same ratio."],
+    ["Which of these is not a criterion for similarity of triangles?", "SSA", "AA", "SSS", "SAS", "The similarity criteria are AA, SSS and SAS."],
+    ["The ratio of the areas of two similar triangles equals", "the square of the ratio of corresponding sides", "the ratio of corresponding sides", "the cube of the ratio of corresponding sides", "the sum of corresponding sides", "Area scales with the square of length."],
+    ["Triangles with sides 3, 4, 5 and 6, 8, 10 are", "similar", "congruent", "neither similar nor congruent", "equilateral", "Every side of the second is twice the matching side of the first, so they are similar but not congruent."],
+    ["The areas of two similar triangles are 16 cm² and 25 cm². The ratio of corresponding sides (first : second) is", "4 : 5", "16 : 25", "2 : 5", "5 : 4", "Side ratio = √(16/25) = 4/5."],
+    ["A 13 m ladder reaches a window 12 m above the ground. The foot of the ladder is how far from the wall?", "5 m", "1 m", "7 m", "25 m", "d² = 13² − 12² = 25, so d = 5."],
+    ["A triangle with sides 7 cm, 24 cm and 25 cm is", "right-angled", "acute-angled", "obtuse-angled", "equilateral", "7² + 24² = 49 + 576 = 625 = 25², so it is right-angled."],
+    ["In △ABC, DE ∥ BC, AD = 2 cm, DB = 3 cm and AE = 4 cm. Then EC is", "6 cm", "8/3 cm", "5 cm", "9 cm", "AD/DB = AE/EC gives 2/3 = 4/EC, so EC = 6."],
+    ["Similar triangles are congruent only when", "the ratio of corresponding sides is 1", "their angles are equal", "they are right-angled", "they are isosceles", "Equal angles are already given for similar triangles. Congruence also needs equal sides."],
+    ["Two similar triangles have corresponding sides 6 cm and 9 cm. The ratio of their perimeters is", "2 : 3", "4 : 9", "3 : 2", "1 : 3", "Perimeters are in the same ratio as corresponding sides: 6 : 9 = 2 : 3."],
+    ["Two triangles are similar if their angles are equal and their corresponding sides are", "in the same ratio", "equal", "perpendicular", "parallel", "Similar figures have equal angles and proportional sides."],
+    ["In △ABC, DE ∥ BC with D on AB and E on AC. If AD = 3, DB = 6 and AE = 2, then EC is", "4", "3", "6", "2", "AD/DB = AE/EC gives 3/6 = 2/EC, so EC = 4."],
+    ["Sides 3 cm, 4 cm and 5 cm form", "a right triangle", "an acute triangle", "an obtuse triangle", "an equilateral triangle", "3² + 4² = 25 = 5²."],
+    ["If △ABC ~ △DEF and AB/DE = 2/3, the ratio of their areas is", "4 : 9", "2 : 3", "8 : 27", "9 : 4", "The area ratio is (2/3)² = 4/9."],
+    ["The hypotenuse of a right triangle with legs 5 cm and 12 cm is", "13 cm", "17 cm", "15 cm", "7 cm", "√(25 + 144) = √169 = 13."],
+    ["All equilateral triangles are", "similar", "congruent", "right-angled", "scalene", "They all have 60° angles, so they are similar, but sizes can differ."],
+    ["A 10 m ladder reaches a window 8 m high. The foot of the ladder is how far from the wall?", "6 m", "2 m", "4 m", "18 m", "√(10² − 8²) = √36 = 6."],
+    ["The basic proportionality theorem is also called", "Thales theorem", "Pythagoras theorem", "Apollonius theorem", "Ceva's theorem", "A line parallel to one side divides the other two sides proportionally. This is Thales' theorem."],
+    ["A 6 m pole casts a 4 m shadow. At the same time a tower casts a 20 m shadow. The tower's height is", "30 m", "24 m", "13.3 m", "80 m", "6/4 = h/20, so h = 30."],
+    ["Two similar triangles have areas 16 cm² and 25 cm². The ratio of their corresponding sides is", "4 : 5", "16 : 25", "8 : 5", "2 : 5", "Side ratio = √(16/25) = 4/5."]
+  ],
+  7: [
+    ["The distance between (0, 0) and (3, 4) is", "5", "7", "1", "25", "√(3² + 4²) = √25 = 5."],
+    ["The midpoint of the segment joining (2, 3) and (6, 7) is", "(4, 5)", "(8, 10)", "(2, 2)", "(4, 4)", "((2 + 6)/2, (3 + 7)/2) = (4, 5)."],
+    ["The distance of (−5, 12) from the origin is", "13", "17", "7", "169", "√(25 + 144) = √169 = 13."],
+    ["The point dividing (1, 2) and (4, 5) internally in the ratio 1 : 2 is", "(2, 3)", "(3, 4)", "(2, 4)", "(3, 3)", "x = (1 × 4 + 2 × 1)/3 = 2 and y = (1 × 5 + 2 × 2)/3 = 3."],
+    ["The points (1, 1), (2, 2) and (3, 3) are", "collinear", "vertices of a triangle", "vertices of a right triangle", "vertices of an equilateral triangle", "All three lie on the line y = x."],
+    ["The distance formula between (x₁, y₁) and (x₂, y₂) is", "√((x₂ − x₁)² + (y₂ − y₁)²)", "√((x₂ + x₁)² + (y₂ + y₁)²)", "(x₂ − x₁) + (y₂ − y₁)", "√((x₂ − x₁)² − (y₂ − y₁)²)", "It comes from Pythagoras' theorem."],
+    ["Any point on the x-axis has y-coordinate", "0", "1", "equal to its x-coordinate", "−1", "The x-axis is the line y = 0."],
+    ["The distance between (x, 0) and (0, 4) is 5. Then x equals", "±3", "3 only", "±5", "±4", "x² + 16 = 25, so x² = 9 and x = ±3."],
+    ["The midpoint of the segment joining (−2, 4) and (8, −6) is", "(3, −1)", "(6, −2)", "(5, −5)", "(3, 1)", "((−2 + 8)/2, (4 − 6)/2) = (3, −1)."],
+    ["The points (0, 0), (2, 0), (2, 2) and (0, 2) form a", "square", "trapezium", "kite", "triangle", "All sides are 2 and the diagonals are equal (2√2), with right angles at the corners."],
+    ["The distance between (1, 2) and (4, 6) is", "5", "7", "25", "√7", "√(3² + 4²) = 5."],
+    ["The mid-point of (2, 4) and (6, 10) is", "(4, 7)", "(8, 14)", "(4, 6)", "(2, 3)", "((2 + 6)/2, (4 + 10)/2) = (4, 7)."],
+    ["The distance of (5, 12) from the origin is", "13", "17", "7", "60", "√(25 + 144) = 13."],
+    ["The point dividing the line joining (1, 2) and (7, 8) internally in the ratio 1 : 2 is", "(3, 4)", "(5, 6)", "(4, 5)", "(2, 3)", "x = (1 × 7 + 2 × 1)/3 = 3 and y = (1 × 8 + 2 × 2)/3 = 4."],
+    ["Every point on the x-axis has the form", "(a, 0)", "(0, b)", "(a, a)", "(0, 0) only", "The y-coordinate on the x-axis is 0."],
+    ["The centroid of the triangle with vertices (0, 0), (6, 0) and (0, 9) is", "(2, 3)", "(3, 4.5)", "(6, 9)", "(2, 9)", "((0 + 6 + 0)/3, (0 + 0 + 9)/3) = (2, 3)."],
+    ["If the distance between (x, 0) and (0, 3) is 5, then x is", "4 or −4", "only 4", "3 or −3", "5 or −5", "x² + 9 = 25, so x² = 16."],
+    ["The area of the triangle with vertices (0, 0), (4, 0) and (0, 6) is", "12", "24", "10", "6", "Half of base × height = ½ × 4 × 6 = 12."],
+    ["The mid-point of the line joining (−4, 3) and (4, −3) is", "(0, 0)", "(4, 3)", "(−4, −3)", "(8, 0)", "((−4 + 4)/2, (3 − 3)/2) = (0, 0)."],
+    ["The points (0, 0), (3, 0) and (0, 4) form", "a right triangle", "an equilateral triangle", "a straight line", "a square", "The angle at the origin is 90°, between the axes."]
+  ],
+  8: [
+    ["sin 30° equals", "1/2", "√3/2", "1", "1/√2", "This is a standard value: sin 30° = 1/2."],
+    ["tan 45° equals", "1", "0", "√3", "1/√3", "At 45° the opposite and adjacent sides are equal."],
+    ["If sin A = 3/5 and A is acute, then cos A equals", "4/5", "3/4", "5/3", "5/4", "The sides are 3, 4, 5, so cos A = 4/5."],
+    ["sin²θ + cos²θ equals", "1", "0", "2", "tan²θ", "This is the basic trigonometric identity."],
+    ["cos 60° equals", "1/2", "√3/2", "0", "1", "cos 60° = sin 30° = 1/2."],
+    ["sec θ is the reciprocal of", "cos θ", "sin θ", "tan θ", "cot θ", "sec θ = 1/cos θ."],
+    ["tan 60° equals", "√3", "1/√3", "1", "√3/2", "sin 60°/cos 60° = (√3/2)/(1/2) = √3."],
+    ["sin(90° − A) equals", "cos A", "sin A", "−cos A", "tan A", "Complementary angles swap sine and cosine."],
+    ["If tan θ = 1 and θ is acute, then θ equals", "45°", "30°", "60°", "90°", "tan 45° = 1."],
+    ["1 + tan²θ equals", "sec²θ", "cosec²θ", "cot²θ", "sin²θ", "Divide sin²θ + cos²θ = 1 by cos²θ."],
+    ["If sin θ = 3/5 for an acute angle θ, then cos θ is", "4/5", "3/4", "5/3", "5/4", "The third side is 4, so cos θ = 4/5."],
+    ["tan θ equals", "sin θ / cos θ", "cos θ / sin θ", "sin θ cos θ", "1 / sin θ", "tan θ = opposite/adjacent = sin θ / cos θ."],
+    ["If tan θ = 1 for an acute angle, then sin θ cos θ is", "1/2", "1", "√2", "1/√2", "θ = 45°, so (1/√2)(1/√2) = 1/2."],
+    ["The value of sin 0° is", "0", "1", "1/2", "undefined", "The opposite side shrinks to zero."],
+    ["sin 60° equals", "√3/2", "1/2", "1/√2", "1/√3", "This is a standard value."],
+    ["cos 45° equals", "1/√2", "1/2", "√3/2", "1", "In a 45° right triangle, cos 45° = 1/√2."],
+    ["cos 0° equals", "1", "0", "1/2", "undefined", "The adjacent side equals the hypotenuse."],
+    ["cosec θ is the reciprocal of", "sin θ", "cos θ", "tan θ", "sec θ", "cosec θ = 1/sin θ."],
+    ["1 + cot²θ equals", "cosec²θ", "sec²θ", "tan²θ", "cos²θ", "Divide sin²θ + cos²θ = 1 by sin²θ."],
+    ["tan 30° equals", "1/√3", "√3", "1/2", "1", "tan 30° = sin 30° / cos 30° = (1/2)/(√3/2) = 1/√3."]
+  ],
+  9: [
+    ["The angle of elevation is measured from", "the horizontal, upwards", "the vertical", "the horizontal, downwards", "the object", "It is the angle between the horizontal line and the line of sight when looking up."],
+    ["From a point 20 m from a tower's foot, the top is seen at 45° elevation. The tower is", "20 m high", "10 m high", "20√3 m high", "40 m high", "tan 45° = 1, so height = distance = 20 m."],
+    ["A 10 m ladder makes 60° with the ground. The height it reaches is", "5√3 m", "10√3 m", "5 m", "10 m", "Height = 10 sin 60° = 10 × √3/2 = 5√3."],
+    ["The angle of depression of an object, seen from a height, equals", "the angle of elevation of the height as seen from the object", "90° minus the angle of elevation", "twice the angle of elevation", "half the angle of elevation", "They are alternate angles between parallel horizontals."],
+    ["A pole's shadow equals its height when the Sun's elevation is", "45°", "30°", "60°", "90°", "tan θ = height/shadow = 1 gives θ = 45°."],
+    ["From the top of a 50 m building, the angle of depression of a car is 30°. The car is how far from the foot of the building?", "50√3 m", "50/√3 m", "100 m", "25√3 m", "tan 30° = 50/d, so d = 50√3."],
+    ["A taut kite string of 50 m makes 30° with the ground. The kite's height is", "25 m", "25√3 m", "50 m", "50√3 m", "Height = 50 sin 30° = 25."],
+    ["In a height-and-distance problem, tan θ equals height divided by", "the horizontal distance", "the line of sight", "the height", "the slant height", "tan = opposite / adjacent, and the adjacent side is the horizontal distance."],
+    ["A 6 m pole casts a shadow 2√3 m long. The Sun's elevation is", "60°", "30°", "45°", "90°", "tan θ = 6/(2√3) = √3, so θ = 60°."],
+    ["As you walk towards a tower, the angle of elevation of its top", "increases", "decreases", "stays the same", "becomes 0°", "A smaller horizontal distance makes tan θ larger."],
+    ["The angle of elevation of a tower top is 45° from a point 30 m from its foot. The tower's height is", "30 m", "15 m", "30√3 m", "60 m", "tan 45° = 1, so height = 30 m."],
+    ["The angle of elevation is measured", "above the horizontal", "below the horizontal", "from the vertical", "from the object", "It is the angle the line of sight makes upward from the horizontal."],
+    ["A 10 m pole casts a shadow of 10√3 m. The Sun's elevation is", "30°", "45°", "60°", "90°", "tan θ = 10/(10√3) = 1/√3, so θ = 30°."],
+    ["From a point 20 m from the foot of a tower, the elevation of its top is 60°. The height is", "20√3 m", "20/√3 m", "40 m", "20 m", "height = 20 × tan 60° = 20√3."],
+    ["From the top of a 50 m cliff the angle of depression of a boat is 30°. The boat's distance from the base is", "50√3 m", "50/√3 m", "100 m", "25√3 m", "tan 30° = 50/d, so d = 50√3."],
+    ["The angle of depression from a high point equals the angle of elevation from the lower point because they are", "alternate angles", "complementary angles", "supplementary angles", "adjacent angles", "The two horizontals are parallel, so the angles are alternate."],
+    ["A 10 m ladder makes 60° with the ground. How high does it reach?", "5√3 m", "5 m", "10√3 m", "10 m", "height = 10 × sin 60° = 5√3."],
+    ["As the Sun's elevation rises from 30° to 60°, a vertical pole's shadow", "becomes shorter", "becomes longer", "stays the same", "vanishes", "Length = height / tan θ, and tan θ grows with θ."],
+    ["A tree is 15 m tall and the angle of elevation of its top is 45°. The distance from its foot is", "15 m", "15√3 m", "7.5 m", "30 m", "tan 45° = 1, so the distance equals the height."],
+    ["In the right triangle formed by a tower, tan(angle of elevation) equals", "height / distance from the foot", "distance from the foot / height", "height / line of sight", "line of sight / height", "tan = opposite / adjacent."]
+  ],
+  10: [
+    ["A tangent to a circle touches it at", "exactly one point", "two points", "no point", "infinitely many points", "That is the definition of a tangent."],
+    ["A tangent at a point of a circle is ___ to the radius through that point.", "perpendicular", "parallel", "equal", "inclined at 45°", "The tangent is perpendicular to the radius at the point of contact."],
+    ["The number of tangents from an external point to a circle is", "2", "1", "0", "infinite", "Exactly two tangents can be drawn from a point outside a circle."],
+    ["A point is 5 cm from the centre of a circle of radius 3 cm. The tangent length from it is", "4 cm", "2 cm", "8 cm", "√34 cm", "√(5² − 3²) = √16 = 4."],
+    ["The number of tangents from a point on a circle is", "1", "2", "0", "infinite", "Only one tangent passes through a point on the circle."],
+    ["Tangents PA and PB are drawn from P. If PA = 7 cm, then PB is", "7 cm", "14 cm", "3.5 cm", "cannot be found", "Tangents from an external point are equal in length."],
+    ["How many tangents of a circle are parallel to a given direction?", "2", "1", "0", "infinite", "There is one on each side of the circle."],
+    ["A circle has radius 6 cm and a point is 10 cm from its centre. The tangent length is", "8 cm", "4 cm", "2√34 cm", "16 cm", "√(10² − 6²) = √64 = 8."],
+    ["Tangents PA and PB from P meet the circle (centre O) at A and B, with ∠APB = 80°. Then ∠OAB is", "40°", "50°", "80°", "100°", "In quadrilateral OAPB, ∠AOB = 360° − 90° − 90° − 80° = 100°. Triangle OAB is isosceles, so ∠OAB = 40°."],
+    ["A line that meets a circle at two points is called a", "secant", "tangent", "radius", "normal", "A secant cuts the circle at two points."],
+    ["A tangent to a circle meets it at exactly", "one point", "two points", "no point", "three points", "A tangent touches the circle at a single point."],
+    ["The tangent at a point of a circle is perpendicular to", "the radius through the point of contact", "a chord through that point", "the other tangent", "the tangent's own extension", "This is a standard theorem."],
+    ["The two tangents from an external point to a circle are", "equal in length", "different in length", "twice the radius", "perpendicular always", "Tangents from one external point are equal."],
+    ["A line cutting a circle at two points is called a", "secant", "tangent", "normal", "radius", "A secant meets the circle in two points."],
+    ["A point P is 13 cm from the centre of a circle of radius 5 cm. The tangent length from P is", "12 cm", "8 cm", "18 cm", "10 cm", "√(13² − 5²) = √144 = 12."],
+    ["The angle between a tangent and the radius at the point of contact is", "90°", "45°", "60°", "180°", "The tangent is perpendicular to the radius."],
+    ["For any given direction, a circle has exactly how many parallel tangents?", "2", "1", "3", "infinitely many", "One on each side of the circle."],
+    ["Two tangents from P make an angle of 60° with each other. The angle between the radii to the contact points is", "120°", "60°", "90°", "150°", "360° − 90° − 90° − 60° = 120°."],
+    ["Tangents from P touch a circle at A and B. If PA = 7 cm, then PB is", "7 cm", "14 cm", "3.5 cm", "49 cm", "Tangents from an external point are equal."],
+    ["From a point inside a circle, the number of tangents that can be drawn to it is", "0", "1", "2", "infinitely many", "Every line through an inside point cuts the circle in two points."]
+  ],
+  11: [
+    ["The area of a circle of radius 7 cm (π = 22/7) is", "154 cm²", "44 cm²", "49 cm²", "308 cm²", "πr² = 22/7 × 49 = 154."],
+    ["The circumference of a circle of radius 14 cm (π = 22/7) is", "88 cm", "44 cm", "154 cm", "616 cm", "2πr = 2 × 22/7 × 14 = 88."],
+    ["The area of a sector of angle θ in a circle of radius r is", "(θ/360) × πr²", "(θ/360) × 2πr", "(θ/180) × πr²", "(360/θ) × πr²", "A sector is the fraction θ/360 of the whole circle."],
+    ["The arc of a 90° sector of a circle of radius 14 cm has length (π = 22/7)", "22 cm", "44 cm", "11 cm", "88 cm", "(90/360) × 2 × 22/7 × 14 = 22."],
+    ["The area of a quadrant of a circle of radius 14 cm (π = 22/7) is", "154 cm²", "616 cm²", "308 cm²", "77 cm²", "Quarter of 22/7 × 196 = 154."],
+    ["The area of a minor segment equals", "area of sector − area of triangle", "area of sector + area of triangle", "area of triangle − area of sector", "area of circle − area of sector", "Remove the triangle formed by the radii and chord from the sector."],
+    ["The circumference of a circle is 44 cm. Its area (π = 22/7) is", "154 cm²", "44 cm²", "308 cm²", "49 cm²", "2πr = 44 gives r = 7, so area = 154."],
+    ["A wheel of radius 35 cm makes one full turn. The distance covered is (π = 22/7)", "220 cm", "110 cm", "3850 cm", "440 cm", "Distance = circumference = 2 × 22/7 × 35 = 220."],
+    ["Two circles have radii in the ratio 1 : 2. Their areas are in the ratio", "1 : 4", "1 : 2", "2 : 1", "1 : 8", "Area is proportional to the square of the radius."],
+    ["The area of a semicircle of radius 14 cm (π = 22/7) is", "308 cm²", "616 cm²", "154 cm²", "44 cm²", "Half of 22/7 × 196 = 308."],
+    ["The circumference of a circle of radius 7 cm (π = 22/7) is", "44 cm", "22 cm", "154 cm", "14 cm", "2 × 22/7 × 7 = 44."],
+    ["The area of a sector of angle θ and radius r is", "(θ/360) × πr²", "(θ/360) × 2πr", "θ × πr²", "(360/θ) × πr²", "A sector is the fraction θ/360 of the circle's area."],
+    ["The length of an arc of angle θ and radius r is", "(θ/360) × 2πr", "(θ/360) × πr²", "θ × 2πr", "(360/θ) × 2πr", "An arc is the fraction θ/360 of the circumference."],
+    ["A minute hand 14 cm long moves for 30 minutes. How far does its tip travel? (π = 22/7)", "44 cm", "88 cm", "22 cm", "154 cm", "Half a circle: ½ × 2 × 22/7 × 14 = 44."],
+    ["If the circumference of a circle is 88 cm, its radius is (π = 22/7)", "14 cm", "7 cm", "28 cm", "44 cm", "2πr = 88, so r = 88 × 7 / 44 = 14."],
+    ["The area of a semicircle of diameter 14 cm (π = 22/7) is", "77 cm²", "154 cm²", "308 cm²", "38.5 cm²", "r = 7, so ½ × 154 = 77."],
+    ["The perimeter of a semicircle of radius r is", "πr + 2r", "πr", "2πr", "πr + r", "The curved part is πr and the diameter adds 2r."],
+    ["The area of a ring between concentric circles of radii 7 cm and 3.5 cm is (π = 22/7)", "115.5 cm²", "154 cm²", "38.5 cm²", "77 cm²", "π(7² − 3.5²) = 22/7 × 36.75 = 115.5."],
+    ["The area of a circle of radius 21 cm (π = 22/7) is", "1386 cm²", "132 cm²", "693 cm²", "2772 cm²", "22/7 × 441 = 1386."],
+    ["The area of a quadrant of a circle of radius 7 cm (π = 22/7) is", "38.5 cm²", "154 cm²", "77 cm²", "19.25 cm²", "¼ × 22/7 × 49 = 38.5."]
+  ],
+  12: [
+    ["The volume of a cylinder of radius r and height h is", "πr²h", "2πrh", "⅓πr²h", "4πr²", "Base area πr² times height h."],
+    ["The curved surface area of a cone with radius r and slant height l is", "πrl", "πr²", "2πrl", "⅓πrl", "CSA of a cone = πrl."],
+    ["The volume of a sphere of radius r is", "⁴⁄₃πr³", "4πr²", "²⁄₃πr³", "πr³", "⁴⁄₃πr³ is the standard formula."],
+    ["The volume of a sphere of radius 7 cm (π = 22/7) is", "4312/3 cm³", "616 cm³", "1232/3 cm³", "1078 cm³", "⁴⁄₃ × 22/7 × 343 = 4312/3."],
+    ["The total surface area of a cube of side 5 cm is", "150 cm²", "125 cm²", "100 cm²", "25 cm²", "6 faces of 25 cm² each."],
+    ["The volume of a cone of radius 3 cm and height 4 cm (π = 22/7) is", "264/7 cm³", "792/7 cm³", "36 cm³", "22 cm³", "⅓ × 22/7 × 9 × 4 = 264/7."],
+    ["A cone has radius 6 cm and height 8 cm. Its slant height is", "10 cm", "14 cm", "2 cm", "√28 cm", "l = √(36 + 64) = 10."],
+    ["The volume of a solid hemisphere of radius r is", "²⁄₃πr³", "⁴⁄₃πr³", "2πr²", "⅓πr³", "Half of a sphere's volume."],
+    ["A metal sphere is melted and recast into a cylinder. Which quantity stays the same?", "volume", "surface area", "height", "radius", "The amount of metal does not change, so the volume is conserved."],
+    ["The curved surface area of a cylinder of radius 7 cm and height 10 cm (π = 22/7) is", "440 cm²", "1540 cm²", "220 cm²", "154 cm²", "2πrh = 2 × 22/7 × 7 × 10 = 440."],
+    ["The volume of a cuboid 5 cm × 4 cm × 3 cm is", "60 cm³", "47 cm³", "94 cm³", "12 cm³", "5 × 4 × 3 = 60."],
+    ["The volume of a cylinder of radius 7 cm and height 10 cm (π = 22/7) is", "1540 cm³", "440 cm³", "154 cm³", "3080 cm³", "22/7 × 49 × 10 = 1540."],
+    ["The curved surface area of a cylinder is", "2πrh", "πr²h", "2πr(r + h)", "πrl", "The side unrolls to a rectangle of 2πr by h."],
+    ["The volume of a cone is", "⅓πr²h", "πr²h", "½πr²h", "4/3 πr³", "A cone is one third of the cylinder with the same base and height."],
+    ["The volume of a sphere of radius 3 cm is", "36π cm³", "12π cm³", "108π cm³", "27π cm³", "4/3 × π × 27 = 36π."],
+    ["The surface area of a sphere of radius r is", "4πr²", "2πr²", "4/3 πr³", "3πr²", "This is the standard formula."],
+    ["The slant height of a cone with radius 6 cm and height 8 cm is", "10 cm", "14 cm", "7 cm", "2 cm", "√(36 + 64) = 10."],
+    ["The volume of a hemisphere of radius r is", "2/3 πr³", "4/3 πr³", "1/3 πr³", "πr³", "It is half the volume of a sphere."],
+    ["When a solid is melted and recast into another shape, its", "volume remains the same", "surface area remains the same", "height remains the same", "shape remains the same", "The amount of material is unchanged."],
+    ["The total surface area of a cube of side 4 cm is", "96 cm²", "64 cm²", "48 cm²", "16 cm²", "6 × 4² = 96."]
+  ],
+  13: [
+    ["For grouped data, the mean (direct method) is", "Σfx / Σf", "Σx / Σf", "Σf / Σfx", "Σfx / Σx", "Multiply each class mark by its frequency, add, and divide by the total frequency."],
+    ["The class mark of the class 20–30 is", "25", "10", "50", "5", "(20 + 30)/2 = 25."],
+    ["The modal class is the class with", "the highest frequency", "the highest class mark", "the lowest frequency", "the widest interval", "The mode lies in the most frequent class."],
+    ["In the mode formula, f₁ stands for", "the frequency of the modal class", "the frequency of the class before it", "the frequency of the class after it", "the class width", "f₀ and f₂ are the neighbouring frequencies."],
+    ["The empirical relation between the three averages is", "Mode = 3 Median − 2 Mean", "Mode = 2 Median − 3 Mean", "Mode = 3 Mean − 2 Median", "Mean = 3 Median − 2 Mode", "For moderately skewed data, Mode = 3 Median − 2 Mean."],
+    ["The median of 5, 7, 7, 9, 12 is", "7", "9", "5", "8", "The middle value of the five ordered numbers is 7."],
+    ["The median class is the class whose cumulative frequency is", "the first to be at least n/2", "the greatest", "exactly n", "at most n/4", "Locate n/2 among the cumulative frequencies."],
+    ["The mean of 2, 4, 6, 8, 10 is", "6", "5", "8", "30", "Sum = 30, and 30/5 = 6."],
+    ["An ogive is a graph of", "cumulative frequency", "frequency only", "class marks", "the mean", "A less-than or more-than ogive plots cumulative frequencies."],
+    ["If the mean is 12 and the median is 11, the mode by the empirical relation is", "9", "10", "13", "11", "Mode = 3 × 11 − 2 × 12 = 33 − 24 = 9."],
+    ["The mean of 4, 6, 8, 10 and 12 is", "8", "10", "6", "7", "Sum = 40 and 40/5 = 8."],
+    ["The median of 3, 5, 7, 9 and 11 is", "7", "9", "5", "8", "The middle value is 7."],
+    ["The mode of 2, 3, 3, 4, 5, 3, 6 is", "3", "2", "4", "6", "3 appears three times, more than any other value."],
+    ["The empirical relation between the three measures is Mode =", "3 Median − 2 Mean", "2 Median − 3 Mean", "3 Mean − 2 Median", "Mean + Median", "This is the standard empirical relation."],
+    ["The class mark of the class 40–60 is", "50", "20", "100", "40", "(40 + 60)/2 = 50."],
+    ["The median of 4, 8, 6 and 10 is", "7", "8", "6", "5", "In order: 4, 6, 8, 10. The median is (6 + 8)/2 = 7."],
+    ["The mean of the first five natural numbers is", "3", "2.5", "5", "15", "(1 + 2 + 3 + 4 + 5)/5 = 3."],
+    ["A graph of cumulative frequency is called an", "ogive", "histogram", "frequency polygon", "bar graph", "Cumulative frequency curves are called ogives."],
+    ["The sum of 10 observations is 85. Their mean is", "8.5", "85", "0.85", "9.5", "85/10 = 8.5."],
+    ["The mode of a data set is the observation that", "occurs most often", "lies in the middle", "is the average", "is the largest", "Mode means the most frequent value."]
+  ],
+  14: [
+    ["The probability of an impossible event is", "0", "1", "1/2", "−1", "An impossible event never happens."],
+    ["A die is thrown once. P(getting a prime number) is", "1/2", "1/3", "2/3", "1/6", "The primes are 2, 3 and 5, so 3 out of 6 outcomes."],
+    ["P(E) + P(not E) equals", "1", "0", "2", "1/2", "Either E happens or it does not."],
+    ["A card is drawn from a pack of 52. P(king) is", "1/13", "1/4", "4/13", "1/52", "There are 4 kings, and 4/52 = 1/13."],
+    ["Two coins are tossed together. P(two heads) is", "1/4", "1/2", "1/3", "3/4", "One of the four outcomes HH, HT, TH, TT."],
+    ["Which of these cannot be the probability of an event?", "1.5", "0.5", "0", "1", "A probability always lies between 0 and 1."],
+    ["A bag has 3 red and 5 blue balls. P(red) is", "3/8", "5/8", "3/5", "1/3", "3 favourable out of 8 balls."],
+    ["Two dice are thrown. P(sum is 12) is", "1/36", "1/12", "1/6", "1/18", "Only (6, 6) gives 12, out of 36 outcomes."],
+    ["P(not getting a six when a die is thrown once) is", "5/6", "1/6", "1/2", "6/5", "1 − 1/6 = 5/6."],
+    ["A card is drawn from a pack of 52. P(a red face card) is", "3/26", "3/13", "1/13", "6/13", "There are 6 red face cards, and 6/52 = 3/26."],
+    ["The probability of a sure event is", "1", "0", "1/2", "2", "A sure event always happens."],
+    ["A die is rolled once. P(an even number) is", "1/2", "1/3", "1/6", "2/3", "2, 4 and 6 are even: 3 out of 6."],
+    ["A card is drawn from a standard 52-card deck. P(a red card) is", "1/2", "1/4", "1/13", "1/52", "26 of the 52 cards are red."],
+    ["A card is drawn from a standard deck. P(an ace) is", "1/13", "1/52", "4/13", "1/4", "4 aces out of 52 cards: 4/52 = 1/13."],
+    ["Two coins are tossed. P(two heads) is", "1/4", "1/2", "1/3", "3/4", "One of the four equally likely outcomes is HH."],
+    ["A probability can never be", "greater than 1", "equal to 0", "equal to 1", "equal to 1/2", "Probabilities lie between 0 and 1."],
+    ["A die is rolled once. P(a number greater than 4) is", "1/3", "1/2", "2/3", "1/6", "5 and 6 qualify: 2 out of 6."],
+    ["The probability P(E) of any event satisfies", "0 ≤ P(E) ≤ 1", "P(E) > 1", "−1 ≤ P(E) ≤ 1", "P(E) < 0", "A probability is never negative or above 1."],
+    ["If P(E) = 0.3, then P(not E) is", "0.7", "0.3", "0.6", "1.3", "1 − 0.3 = 0.7."],
+    ["A bag has 4 green and 6 yellow balls. P(green) is", "2/5", "3/5", "2/3", "1/4", "4 out of 10 = 2/5."]
+  ]
+};
+
+/* ---------- Class 10 Maths chapter quizzes: read the chapter summary, then take the quiz ---------- */
+function chapterFrame() {
+  stopFast();
+  hideKid();
+  showBoard(false);
+  document.getElementById("rail").hidden = true;
+  document.getElementById("homeBtn").hidden = false;
+  const card = document.getElementById("card");
+  card.className = "card chapters";
+  card.replaceChildren();
+  return card;
+}
+function chapTop() { try { if (window.scrollTo) window.scrollTo(0, 0); } catch (e) {} }
+function backBtn(label, fn) {
+  const b = el("button", "btn small", "‹ " + label);
+  b.type = "button";
+  b.addEventListener("click", fn);
+  return b;
+}
+function sectionTabs(active) {
+  const seg = el("div", "seg");
+  seg.setAttribute("role", "tablist");
+  [["quiz", "Quiz"], ["chapters", "Class 10 Maths"]].forEach(([id, name]) => {
+    const b = el("button", "segb", name);
+    b.type = "button";
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", String(id === active));
+    b.addEventListener("click", () => { if (state.section !== id) { state.section = id; save(); showWelcome(); } });
+    seg.append(b);
+  });
+  return seg;
+}
+
+// A set of 10 questions drawn at random from the chapter's bank, options shuffled
+function chapterQuestions(n) {
+  return shuffle(CH_BANK[n]).slice(0, CHAP_Q).map(r => {
+    const opts = shuffle([{ t: r[1], ok: true }, { t: r[2] }, { t: r[3] }, { t: r[4] }]);
+    return { q: r[0], o: opts.map(x => x.t), a: opts.findIndex(x => x.ok), e: r[5] };
+  });
+}
+
+function chaptersHome(card) {
+  card.append(el("h2", "", "Class 10 Maths"),
+    el("p", "", "Pick a chapter. Read its summary, then take a 10 question quiz. Each try draws a different set of questions."));
+  card.append(el("div", "lvl-label", CH10.length + " chapters"));
+  const list = el("div", "chlist");
+  CH10.forEach(c => {
+    const r = el("button", "chrow");
+    r.type = "button";
+    const best = state.chap[c.n];
+    r.append(el("span", "chn", String(c.n)), el("span", "cht", c.title),
+      el("span", "chu", c.unit + " · " + (best === undefined ? "Not tried" : "Best " + best + " / " + CHAP_Q)));
+    r.addEventListener("click", () => chapterIntro(c.n));
+    list.append(r);
+  });
+  card.append(list);
+}
+
+function chapterIntro(n) {
+  const c = CH10.find(x => x.n === n);
+  if (!c) return showWelcome();
+  run = null;
+  const card = chapterFrame();
+  card.append(backBtn("All chapters", showWelcome));
+  card.append(el("div", "eyebrow", "Chapter " + c.n + " · " + c.unit), el("h2", "", c.title));
+  card.append(el("h3", "sub", "Summary"), el("p", "", c.summary));
+  card.append(el("h3", "sub", "Key points"));
+  const ul = el("ul", "points");
+  c.points.forEach(p => ul.append(el("li", "", p)));
+  card.append(ul);
+  const best = state.chap[n];
+  card.append(el("h3", "sub", "Quiz"), el("p", "", CHAP_Q + " questions on this chapter." + (best === undefined ? "" : " Your best score is " + best + " / " + CHAP_Q + ".")));
+  const row = el("div", "row");
+  const go = el("button", "btn primary big", "Start quiz");
+  go.type = "button";
+  go.addEventListener("click", () => startChapterQuiz(n));
+  row.append(go);
+  if (n > 1) { const p = el("button", "btn", "‹ Chapter " + (n - 1)); p.type = "button"; p.addEventListener("click", () => chapterIntro(n - 1)); row.append(p); }
+  if (n < CH10.length) { const x = el("button", "btn", "Chapter " + (n + 1) + " ›"); x.type = "button"; x.addEventListener("click", () => chapterIntro(n + 1)); row.append(x); }
+  card.append(row);
+  chapTop();
+}
+
+function startChapterQuiz(n) {
+  const c = CH10.find(x => x.n === n);
+  run = { chap: c, stage: 0, i: 0, picked: null, results: [], qs: chapterQuestions(n), vs: null };
+  render();
+  chapTop();
+}
+
+// The chapter summary sits above each question, folded away so the question stays in focus
+function summaryBox(c) {
+  const d = el("details", "sumbox");
+  d.append(el("summary", "", "Chapter summary"), el("p", "", c.summary));
+  return d;
+}
+
+function renderChapResult(card, S) {
+  const c = run.chap, n = c.n;
+  const sc = run.results.filter(Boolean).length;
+  const prev = state.chap[n];
+  if (prev === undefined || sc > prev) state.chap[n] = sc;
+  save();
+  const wrap = el("div", "result-box");
+  wrap.append(el("div", "eyebrow", "Chapter " + n + " · " + c.title));
+  const score = el("div", "score", String(sc));
+  score.append(el("span", "", " / " + S.qs.length));
+  wrap.append(score);
+  const title = sc === CHAP_Q ? "Perfect score" : sc >= PASS ? "Well done" : "Keep practising";
+  const body = sc >= PASS ? "Your best for this chapter is " + state.chap[n] + " / " + CHAP_Q + "." : "Read the summary again and retry. You get a fresh set of questions each time.";
+  wrap.append(el("h2", "", title), el("p", "", body));
+  const row = el("div", "row");
+  const again = el("button", "btn primary", "Retry quiz");
+  again.type = "button";
+  again.addEventListener("click", () => startChapterQuiz(n));
+  const read = el("button", "btn", "Read summary");
+  read.type = "button";
+  read.addEventListener("click", () => chapterIntro(n));
+  row.append(again, read);
+  if (n < CH10.length) { const nx = el("button", "btn", "Chapter " + (n + 1) + " ›"); nx.type = "button"; nx.addEventListener("click", () => chapterIntro(n + 1)); row.append(nx); }
+  const all = el("button", "btn", "All chapters");
+  all.type = "button";
+  all.addEventListener("click", showWelcome);
+  row.append(all);
+  wrap.append(row);
+  card.append(wrap);
+  if (sc >= PASS) burst();
+}
+
+const MODES = [
+  { id: "practice", tag: "1P", name: "Practice", desc: "Climb four levels at your own pace. Score 6 out of 10 to clear each one.", start: "Start" },
+  { id: "vs", tag: "VS", name: "1 Player vs AI", desc: "Race an AI through all four levels. It gets sharper every level.", start: "Start match" },
+  { id: "fast", tag: "0:60", name: "Fast & Furious", desc: "Pick a topic, set your stopwatch and answer as many as you can. Streaks multiply your points.", start: "Start the clock" }
+];
+
+function renderConfig(box) {
+  box.replaceChildren();
+  if (state.mode === "vs") {
+    box.append(el("div", "lvl-label", "How the match works"));
+    const info = el("div", "vs-info");
+    STAGES.forEach((s, i) => {
+      const r = el("div", "vs-row");
+      r.append(el("b", "", "Level " + (i + 1) + " · " + s.name), el("span", "", AI_TIERS[i].name + " AI · " + (10 * (i + 1)) + " pts per answer"));
+      info.append(r);
+    });
+    box.append(info);
+    return;
+  }
+  if (state.mode === "fast") {
+    box.append(el("div", "lvl-label", "Choose a topic"));
+    const chips = el("div", "chips");
+    const chipEls = TOPICS.map(t => {
+      const b = el("button", "chip");
+      b.type = "button";
+      b.append(el("span", "ct", t.tag), el("span", "cn", t.name));
+      b.addEventListener("click", () => { state.fast.topic = t.id; save(); sync(); });
+      chips.append(b);
+      return b;
+    });
+    box.append(chips, el("div", "lvl-label", "Set your stopwatch"));
+    const sw = el("div", "stopwatch");
+    const disp = el("div", "swdisplay");
+    const side = el("div", "sw-side");
+    const presets = el("div", "presets");
+    const presetEls = FAST_PRESETS.map(s => {
+      const b = el("button", "preset", s + " s");
+      b.type = "button";
+      b.addEventListener("click", () => {
+        state.fast.secs = s; save();
+        inp.value = String(s);
+        inp.setAttribute("aria-invalid", "false");
+        sync();
+      });
+      presets.append(b);
+      return b;
+    });
+    const lab = el("label", "custom");
+    lab.setAttribute("for", "fastSecs");
+    lab.append(el("span", "", "Custom seconds (10 to 600)"));
+    const inp = el("input");
+    inp.id = "fastSecs";
+    inp.type = "number";
+    inp.setAttribute("min", "10");
+    inp.setAttribute("max", "600");
+    inp.setAttribute("step", "5");
+    inp.setAttribute("inputmode", "numeric");
+    inp.value = String(state.fast.secs);
+    lab.append(inp);
+    const best = el("div", "best-line");
+    function sync() {
+      chipEls.forEach((b, i) => b.setAttribute("aria-pressed", String(TOPICS[i].id === state.fast.topic)));
+      presetEls.forEach((b, i) => b.setAttribute("aria-pressed", String(FAST_PRESETS[i] === state.fast.secs)));
+      disp.textContent = fmtTime(state.fast.secs * 1000);
+      const bs = (state.best || {})[state.fast.topic + "-" + state.fast.secs];
+      best.textContent = bs ? "Your best here: " + bs + " pts" : "No score yet for this topic and time.";
+    }
+    inp.addEventListener("input", () => {
+      const v = parseInt(inp.value, 10);
+      const ok = Number.isFinite(v) && v >= 10 && v <= 600;
+      inp.setAttribute("aria-invalid", String(!ok));
+      if (ok) { state.fast.secs = v; save(); sync(); }
+    });
+    inp.addEventListener("change", () => { inp.value = String(state.fast.secs); inp.setAttribute("aria-invalid", "false"); });
+    side.append(presets, lab);
+    sw.append(disp, side);
+    box.append(sw, best);
+    sync();
+    return;
+  }
+  box.append(el("div", "lvl-label", "Choose your level"));
+  const lv = el("div", "levels");
+  STAGES.forEach((s, i) => {
+    const b = el("button", "lvl");
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(i === state.stage));
+    const sc = state.scores[i];
+    const st = el("span", "ls" + (sc !== null && sc >= PASS ? " ok" : ""), sc === null ? "Not tried" : (sc >= PASS ? "Cleared · " : "Best ") + sc + " / " + LEVEL_Q);
+    b.append(el("span", "sigma", LEVEL_TAGS[i]), el("span", "ln", "Level " + (i + 1) + " · " + s.name), el("span", "ld", s.note), st);
+    b.addEventListener("click", () => {
+      state.stage = i; save();
+      lv.querySelectorAll(".lvl").forEach((x, k) => x.setAttribute("aria-pressed", String(k === i)));
+    });
+    lv.append(b);
+  });
+  box.append(lv);
+}
+
+function showWelcome() {
+  stopFast();
+  run = null;
+  hideKid();
+  showBoard(false);
+  document.getElementById("rail").hidden = true;
+  document.getElementById("homeBtn").hidden = true;
+  const card = document.getElementById("card");
+  card.className = "card welcome";
+  card.replaceChildren();
+  card.append(sectionTabs(state.section));
+  if (state.section === "chapters") { chaptersHome(card); return; }
+  const f = el("div", "formula");
+  f.append(document.createTextNode("a² + b² = c²   ·   "), el("b", "", "n(n+1)/2"), document.createTextNode("   ·   e^(iπ) + 1 = 0"));
+  card.append(f, el("h2", "", "Pick a mode and play."),
+    el("p", "", "Climb four levels, race an AI, or beat the clock on the topic you choose. The numbers change every time."));
+  card.append(el("div", "lvl-label", "Choose mode · swipe, drag or use the arrows"));
+
+  const deck = el("div", "deck");
+  deck.tabIndex = 0;
+  deck.setAttribute("role", "group");
+  deck.setAttribute("aria-roledescription", "carousel");
+  deck.setAttribute("aria-label", "Game modes. Use the left and right arrow keys to switch.");
+  const track = el("div", "track");
+  MODES.forEach(m => {
+    const p = el("div", "panel");
+    p.append(el("span", "ptag", m.tag), el("span", "pn", m.name), el("span", "pd", m.desc));
+    track.append(p);
+  });
+  deck.append(track);
+
+  const nav = el("div", "deck-nav");
+  const prevB = el("button", "arrow", "‹");
+  prevB.type = "button";
+  prevB.setAttribute("aria-label", "Previous mode");
+  const nextB = el("button", "arrow", "›");
+  nextB.type = "button";
+  nextB.setAttribute("aria-label", "Next mode");
+  const pips = el("div", "pips");
+  const pipEls = MODES.map(m => {
+    const b = el("button", "pip");
+    b.type = "button";
+    b.setAttribute("aria-label", "Show " + m.name);
+    pips.append(b);
+    return b;
+  });
+  nav.append(prevB, pips, nextB);
+
+  const cfgBox = el("div", "mode-config");
+  const row = el("div", "row");
+  const go = el("button", "btn primary big", "Start");
+  go.type = "button";
+  row.append(go);
+  card.append(deck, nav, cfgBox, row);
+
+  const cur = () => Math.max(0, MODES.findIndex(m => m.id === state.mode));
+  function show(i, force) {
+    i = Math.max(0, Math.min(MODES.length - 1, i));
+    const changed = MODES[i].id !== state.mode;
+    state.mode = MODES[i].id;
+    if (changed) save();
+    track.style.transform = "translateX(" + (-i * 100) + "%)";
+    pipEls.forEach((b, k) => b.setAttribute("aria-pressed", String(k === i)));
+    prevB.disabled = i === 0;
+    nextB.disabled = i === MODES.length - 1;
+    go.textContent = MODES[i].start;
+    if (changed || force) renderConfig(cfgBox);
+  }
+  prevB.addEventListener("click", () => show(cur() - 1));
+  nextB.addEventListener("click", () => show(cur() + 1));
+  pipEls.forEach((b, k) => b.addEventListener("click", () => show(k)));
+  deck.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") { e.preventDefault(); show(cur() - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); show(cur() + 1); }
+  });
+
+  // Swipe or drag sideways to change mode (touch, pen and mouse)
+  let sx = 0, dx = 0, drag = false;
+  deck.addEventListener("pointerdown", e => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    drag = true; sx = e.clientX; dx = 0;
+    track.classList.add("dragging");
+    try { deck.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  deck.addEventListener("pointermove", e => {
+    if (!drag) return;
+    dx = e.clientX - sx;
+    const i = cur();
+    const edge = (i === 0 && dx > 0) || (i === MODES.length - 1 && dx < 0);
+    track.style.transform = "translateX(calc(" + (-i * 100) + "% + " + (edge ? dx * 0.3 : dx) + "px))";
+  });
+  const endDrag = () => {
+    if (!drag) return;
+    drag = false;
+    track.classList.remove("dragging");
+    const i = cur();
+    if (dx < -50) show(i + 1);
+    else if (dx > 50) show(i - 1);
+    else show(i);
+  };
+  deck.addEventListener("pointerup", endDrag);
+  deck.addEventListener("pointercancel", endDrag);
+
+  go.addEventListener("click", () => {
+    if (state.mode === "vs") startVs();
+    else if (state.mode === "fast") startFast();
+    else startStage(state.stage);
+  });
+  show(cur(), true);
+}
+
+/* ---------- Fast & Furious: pick a topic, set a stopwatch, answer as many as you can ---------- */
+const FAST_PRESETS = [30, 60, 90, 120];
+const FAST_PENALTY = 3000;
+let fastTick = null, fastTimers = [];
+function fastLater(fn, ms) { const t = setTimeout(fn, ms); fastTimers.push(t); return t; }
+function stopFast() {
+  clearInterval(fastTick); fastTick = null;
+  fastTimers.forEach(clearTimeout); fastTimers = [];
+  document.getElementById("boardAi").classList.remove("low", "hit");
+  document.getElementById("boardYou").classList.remove("lead");
+}
+function getTopic(id) { return TOPICS.find(t => t.id === id) || TOPICS[0]; }
+function pad2(n) { return n < 10 ? "0" + n : String(n); }
+function fmtTime(ms) {
+  const t = Math.max(0, ms);
+  if (t >= 60000) return Math.floor(t / 60000) + ":" + pad2(Math.floor(t / 1000) % 60);
+  return (Math.floor(t / 100) / 10).toFixed(1);
+}
+function fastMult(streak) { return streak >= 6 ? 3 : streak >= 3 ? 2 : 1; }
+function setBoardText(id, v, bump) {
+  const n = document.getElementById(id);
+  if (n.textContent === String(v)) return;
+  n.textContent = String(v);
+  if (bump) { n.classList.remove("bump"); void n.offsetWidth; n.classList.add("bump"); }
+}
+
+function startFast() {
+  stopFast();
+  hideKid();
+  const cfg = state.fast;
+  const secs = Math.min(600, Math.max(10, Math.round(Number(cfg.secs)) || 60));
+  cfg.secs = secs; save();
+  run = { fast: { topic: cfg.topic, secs, score: 0, streak: 0, bestStreak: 0, correct: 0, total: 0, sumMs: 0, endAt: 0, locked: false, q: null, lastQ: "", qStart: 0, btns: null } };
+  showBoard(true);
+  document.getElementById("youLabel").textContent = "Score";
+  document.getElementById("aiLabel").textContent = "Time";
+  setBoardText("youScore", 0, false);
+  setBoardText("aiScore", fmtTime(secs * 1000), false);
+  document.getElementById("rail").hidden = true;
+  document.getElementById("homeBtn").hidden = false;
+  fastCountdown(3);
+}
+
+function fastCountdown(n) {
+  const f = run.fast, card = document.getElementById("card");
+  card.className = "card fast-intro";
+  card.replaceChildren(
+    el("div", "eyebrow", getTopic(f.topic).name + " · " + f.secs + " seconds"),
+    el("div", "count", n > 0 ? String(n) : "GO!"),
+    el("p", "", "Each wrong answer costs 3 seconds. Keys 1 to 4 pick an answer."));
+  fastLater(n > 0 ? () => fastCountdown(n - 1) : beginFast, n > 0 ? 700 : 450);
+}
+
+function beginFast() {
+  const f = run.fast;
+  f.endAt = Date.now() + f.secs * 1000;
+  fastTick = setInterval(fastUpdate, 100);
+  fastNext();
+}
+
+function fastUpdate() {
+  if (!run || !run.fast) return;
+  const f = run.fast, left = f.endAt - Date.now();
+  setBoardText("aiScore", fmtTime(left), false);
+  const low = left <= 10000;
+  document.getElementById("boardAi").classList.toggle("low", low);
+  const bar = document.getElementById("fastBar");
+  if (bar) {
+    bar.style.width = Math.max(0, Math.min(100, left / (f.secs * 1000) * 100)) + "%";
+    bar.parentNode.classList.toggle("low", low);
+  }
+  if (left <= 0) finishFast();
+}
+
+function comboText(streak) { return "Streak " + streak + (fastMult(streak) > 1 ? " · ×" + fastMult(streak) : ""); }
+
+function fastNext() {
+  const f = run.fast;
+  f.locked = false;
+  const T = getTopic(f.topic);
+  let q = null;
+  for (let t = 0; t < 30; t++) {
+    const c = pickOf(T.gen)();
+    if (!c) continue;
+    if (!q) q = c;
+    if (c.q !== f.lastQ) { q = c; break; }
+  }
+  if (!q) q = g11();
+  f.q = q; f.lastQ = q.q; f.qStart = Date.now();
+  const card = document.getElementById("card");
+  card.className = "card fast";
+  card.replaceChildren();
+  const meta = el("div", "meta");
+  const nm = el("div", "stage-name", "Fast & Furious");
+  nm.append(el("small", "", T.name));
+  const combo = el("div", "combo" + (fastMult(f.streak) > 1 ? " hot" : ""), comboText(f.streak));
+  combo.id = "fastCombo";
+  meta.append(nm, combo);
+  const bar = el("div", "fbar"), fill = el("i");
+  fill.id = "fastBar";
+  fill.style.width = Math.max(0, Math.min(100, (f.endAt - Date.now()) / (f.secs * 10))) + "%";
+  bar.append(fill);
+  card.append(meta, bar, el("p", "q", q.q));
+  if (q.h) card.append(el("p", "qhint", q.h));
+  const opts = el("div", "opts");
+  f.btns = q.o.map((t, k) => {
+    const b = el("button", "opt", t);
+    b.type = "button";
+    b.addEventListener("click", () => fastAnswer(k));
+    opts.append(b);
+    return b;
+  });
+  const msg = el("div", "fmsg", "");
+  msg.id = "fastMsg";
+  card.append(opts, msg);
+}
+
+function fastAnswer(k) {
+  const f = run && run.fast;
+  if (!f || f.locked || fastTick === null || !f.q) return;
+  if (f.endAt - Date.now() <= 0) return;
+  f.locked = true;
+  const Q = f.q, ok = k === Q.a;
+  f.total++;
+  f.sumMs += Date.now() - f.qStart;
+  f.btns.forEach((b, i) => { b.disabled = true; b.classList.add(i === Q.a ? "right" : i === k ? "wrong" : "dim"); });
+  const msg = document.getElementById("fastMsg");
+  if (ok) {
+    f.correct++; f.streak++; f.bestStreak = Math.max(f.bestStreak, f.streak);
+    const m = fastMult(f.streak), pts = 10 * m;
+    f.score += pts;
+    msg.textContent = "+" + pts + (m > 1 ? " · combo ×" + m : "");
+    msg.className = "fmsg ok";
+    setBoardText("youScore", f.score, true);
+  } else {
+    f.streak = 0; f.endAt -= FAST_PENALTY;
+    msg.textContent = "Wrong, −3 s. Answer: " + Q.o[Q.a];
+    msg.className = "fmsg no";
+    const b = document.getElementById("boardAi");
+    b.classList.add("hit");
+    fastLater(() => b.classList.remove("hit"), 450);
+  }
+  const combo = document.getElementById("fastCombo");
+  if (combo) { combo.textContent = comboText(f.streak); combo.classList.toggle("hot", fastMult(f.streak) > 1); }
+  fastUpdate();
+  if (fastTick !== null) fastLater(() => { if (run && run.fast === f && fastTick !== null) fastNext(); }, ok ? 260 : 650);
+}
+
+function finishFast() {
+  const f = run.fast;
+  clearInterval(fastTick); fastTick = null;
+  fastTimers.forEach(clearTimeout); fastTimers = [];
+  document.getElementById("boardAi").classList.remove("low", "hit");
+  setBoardText("aiScore", fmtTime(0), false);
+  if (!state.best) state.best = {};
+  const key = f.topic + "-" + f.secs;
+  const prev = state.best[key] || 0;
+  const isBest = f.score > prev;
+  if (isBest) { state.best[key] = f.score; save(); }
+  const T = getTopic(f.topic);
+  const card = document.getElementById("card");
+  card.className = "card";
+  card.replaceChildren();
+  const wrap = el("div", "result-box");
+  wrap.append(el("div", "eyebrow", "Fast & Furious · " + T.name + " · " + f.secs + " s"));
+  const score = el("div", "score", String(f.score));
+  score.append(el("span", "", " pts"));
+  wrap.append(score, el("h2", "", isBest ? "New personal best!" : "Time's up"),
+    el("p", "", isBest ? (prev > 0 ? "You beat your old best of " + prev + "." : "First score on the board for this topic and time.") : "Your best for this topic and time is " + prev + "."));
+  const acc = f.total ? Math.round(100 * f.correct / f.total) : 0;
+  const avg = f.total ? (f.sumMs / f.total / 1000).toFixed(1) + " s" : "n/a";
+  const bd = el("div", "breakdown");
+  [["Correct", f.correct + " / " + f.total], ["Accuracy", acc + "%"], ["Best streak", String(f.bestStreak)], ["Avg per answer", avg]].forEach(([l, v]) => {
+    const d = el("div", "", l);
+    d.append(el("b", "", v));
+    bd.append(d);
+  });
+  wrap.append(bd);
+  const row = el("div", "row");
+  const again = el("button", "btn primary", "Play again");
+  again.type = "button";
+  again.addEventListener("click", startFast);
+  const change = el("button", "btn", "Change topic or time");
+  change.type = "button";
+  change.addEventListener("click", showWelcome);
+  row.append(again, change);
+  wrap.append(row);
+  card.append(wrap);
+  if (isBest && f.score > 0) burst();
+}
+
+document.addEventListener("keydown", e => {
+  if (!run || !run.fast || fastTick === null || run.fast.locked || !run.fast.q) return;
+  const k = "1234".indexOf(e.key);
+  if (k >= 0 && k < run.fast.q.o.length) fastAnswer(k);
+});
+
+
+function renderRail() {
+  const rail = document.getElementById("rail");
+  document.getElementById("homeBtn").hidden = false;
+  if (run && (run.vs || run.chap)) { rail.hidden = true; return; }
+  rail.hidden = false;
+  rail.replaceChildren();
+  STAGES.forEach((s, i) => {
+    const b = el("button", "step");
+    b.type = "button";
+    const sc = state.scores[i];
+    if (i === state.stage) b.classList.add("current");
+    if (sc !== null && sc >= PASS) b.classList.add("done");
+    b.append(el("span", "n", "Level " + (i + 1)), el("span", "t", s.name),
+      el("span", "s", sc === null ? "Not tried" : "Best " + sc + " / " + LEVEL_Q));
+    b.addEventListener("click", () => startStage(i));
+    rail.append(b);
+  });
+}
+
+function startStage(i, vs) {
+  if (!vs) { state.stage = i; save(); }
+  if (vs) { vs.lvYou = 0; vs.lvAi = 0; }
+  run = { stage: i, i: 0, picked: null, results: [], qs: freshQuestions(i), vs: vs || null };
+  render();
+}
+
+function render() {
+  if (run.picked === null) hideKid();
+  if (run.vs) {
+    if (run.picked === null) { shownYou = run.vs.you; shownAi = run.vs.ai; }
+    showBoard(true);
+    updateBoard(false);
+  } else {
+    showBoard(false);
+  }
+  renderRail();
+  const card = document.getElementById("card");
+  card.className = "card";
+  card.replaceChildren();
+  const S = run.chap ? { name: run.chap.title, note: "Class 10 Maths · " + run.chap.unit, qs: run.qs } : { name: STAGES[run.stage].name, note: STAGES[run.stage].note, qs: run.qs };
+  if (run.i >= S.qs.length) return renderResult(card, S);
+
+  const Q = S.qs[run.i];
+  const meta = el("div", "meta");
+  const nm = el("div", "stage-name", run.chap ? "Chapter " + run.chap.n + " · " + S.name : "Level " + (run.stage + 1) + " · " + S.name);
+  nm.append(el("small", "", S.note + " · question " + (run.i + 1) + " of " + S.qs.length));
+  const dots = el("div", "dots");
+  S.qs.forEach((_, k) => {
+    let c = "dot";
+    if (k < run.results.length) c += run.results[k] ? " ok" : " no";
+    else if (k === run.i) c += " on";
+    dots.append(el("span", c));
+  });
+  meta.append(nm, dots);
+  card.append(meta);
+  if (run.chap) card.append(summaryBox(run.chap));
+  card.append(el("p", "q", Q.q));
+  if (Q.h) card.append(el("p", "qhint", Q.h));
+
+  const opts = el("div", "opts");
+  Q.o.forEach((t, k) => {
+    const b = el("button", "opt", t);
+    b.type = "button";
+    if (run.picked !== null) {
+      b.disabled = true;
+      if (k === Q.a) b.classList.add("right");
+      else if (k === run.picked) b.classList.add("wrong");
+      else b.classList.add("dim");
+    } else {
+      b.addEventListener("click", () => answer(k));
+    }
+    opts.append(b);
+  });
+  card.append(opts);
+
+  if (run.picked !== null) {
+    const ok = run.picked === Q.a;
+    const fb = el("div", "feedback " + (ok ? "ok" : "no"));
+    const pts = 10 * (run.stage + 1);
+    if (ok) fb.append(el("b", "", run.vs ? "Correct · +" + pts : "Correct"), el("span", "", Q.e));
+    else fb.append(el("b", "", "Not quite. The answer is " + Q.o[Q.a]));
+    if (run.vs) fb.append(el("span", "ai-line" + (run.aiShown && run.aiOk ? " ok" : ""), run.aiShown ? run.aiText : "AI is thinking…"));
+    const row = el("div", "row");
+    const last = run.i === S.qs.length - 1;
+    const nx = el("button", "btn primary", last ? "See result" : "Next question");
+    nx.type = "button";
+    nx.addEventListener("click", () => { if (run.vs) clearTimeout(run.aiTimer); run.i++; run.picked = null; render(); });
+    row.append(nx);
+    if (!ok && synth) {
+      const again = el("button", "btn", "Hear again");
+      again.type = "button";
+      again.addEventListener("click", () => say(run.lastSpeech, true));
+      row.append(again);
+    }
+    card.append(fb, row);
+    nx.focus({ preventScroll: true });
+  }
+}
+
+function answer(k) {
+  const Q = run.qs[run.i];
+  const ok = k === Q.a;
+  run.picked = k;
+  run.results.push(ok);
+  if (run.vs) {
+    const pts = 10 * (run.stage + 1);
+    const aiOk = Math.random() < AI_TIERS[run.stage].p;
+    let aiPick = Q.a;
+    if (!aiOk) { const ws = [0, 1, 2, 3].filter(x => x !== Q.a); aiPick = ws[ri(0, ws.length - 1)]; }
+    if (ok) { run.vs.you += pts; run.vs.lvYou += pts; }
+    if (aiOk) { run.vs.ai += pts; run.vs.lvAi += pts; }
+    run.aiOk = aiOk;
+    run.aiShown = false;
+    run.aiText = aiOk ? "AI got it right (+" + pts + ")" : "AI chose " + Q.o[aiPick] + " (+0)";
+    clearTimeout(run.aiTimer);
+    run.aiTimer = setTimeout(revealAi, 900);
+  }
+  render();
+  if (run.vs) { shownYou = run.vs.you; updateBoard(true); }
+  const line = ok ? CHEERS[ri(0, CHEERS.length - 1)] : "No worries! Here is how it works. " + Q.e;
+  run.lastSpeech = ok ? line : "The answer is " + Q.o[Q.a] + ". " + Q.e;
+  showKid(ok, line);
+  say(ok ? line : "No worries! The answer is " + Q.o[Q.a] + ". Here is how it works. " + Q.e);
+  const row = document.querySelector("#card .row");
+  if (row) setTimeout(() => row.scrollIntoView({ block: "center", behavior: "smooth" }), 80);
+}
+
+function renderVsResult(card, S) {
+  const v = run.vs;
+  const last = run.stage === STAGES.length - 1;
+  const tier = AI_TIERS[run.stage].name;
+  const wrap = el("div", "result-box");
+  wrap.append(el("div", "eyebrow", "Level " + (run.stage + 1) + " · " + S.name + " · result"));
+  const box = (label, n, cls) => { const d = el("div"); d.append(el("small", "", label), el("b", cls, String(n))); return d; };
+  let title, body;
+  if (last) {
+    title = v.you > v.ai ? "You beat the AI!" : v.you < v.ai ? "The AI wins this time" : "It's a draw";
+    body = "Final score: you " + v.you + ", AI " + v.ai + ". Play again to see if you can finish ahead.";
+  } else {
+    title = v.lvYou > v.lvAi ? "You won this level" : v.lvYou < v.lvAi ? "The " + tier + " AI won this level" : "This level is a draw";
+    body = "Next up: Level " + (run.stage + 2) + " against the " + AI_TIERS[run.stage + 1].name + " AI, worth " + (10 * (run.stage + 2)) + " points per answer.";
+  }
+  wrap.append(el("h2", "", title), el("p", "", body));
+  const lv = el("div", "vs-total");
+  lv.append(box("You · this level", v.lvYou, "yb"), box("AI · this level", v.lvAi, "ab"));
+  wrap.append(lv);
+  const tot = el("div", "vs-total");
+  tot.append(box("You · match total", v.you, "yb"), box("AI · match total", v.ai, "ab"));
+  wrap.append(tot);
+  const row = el("div", "row");
+  if (!last) {
+    const n = el("button", "btn primary", "Start level " + (run.stage + 2));
+    n.type = "button";
+    n.addEventListener("click", () => startStage(run.stage + 1, run.vs));
+    row.append(n);
+  } else {
+    const again = el("button", "btn primary", "Play again");
+    again.type = "button";
+    again.addEventListener("click", startVs);
+    row.append(again);
+  }
+  const q = el("button", "btn", last ? "Back to start" : "Quit match");
+  q.type = "button";
+  q.addEventListener("click", showWelcome);
+  row.append(q);
+  wrap.append(row);
+  card.append(wrap);
+  if (last ? v.you > v.ai : v.lvYou > v.lvAi) burst();
+}
+
+function renderResult(card, S) {
+  if (run.chap) return renderChapResult(card, S);
+  if (run.vs) return renderVsResult(card, S);
+  const sc = run.results.filter(Boolean).length;
+  const prev = state.scores[run.stage];
+  if (prev === null || sc > prev) state.scores[run.stage] = sc;
+  save();
+  renderRail();
+  const passed = sc >= PASS;
+  const lastStage = run.stage === STAGES.length - 1;
+  const wrap = el("div", "result-box");
+  wrap.append(el("div", "eyebrow", "Level " + (run.stage + 1) + " · " + S.name));
+  const score = el("div", "score", String(sc));
+  score.append(el("span", "", " / " + S.qs.length));
+  wrap.append(score);
+  let title, body;
+  if (passed && lastStage) {
+    const total = state.scores.reduce((a, b) => a + (b || 0), 0);
+    title = "Ladder complete";
+    body = "Your best total across all four levels is " + total + " out of " + LEVEL_Q * 4 + ".";
+  } else if (passed) {
+    title = "Level cleared";
+    body = "Level " + (run.stage + 2) + " (" + STAGES[run.stage + 1].name + ") is next.";
+  } else {
+    title = "Almost there";
+    body = "You need " + PASS + " correct to clear a level. Try again with new questions.";
+  }
+  wrap.append(el("h2", "", title), el("p", "", body));
+  if (passed && lastStage) {
+    const bd = el("div", "breakdown");
+    STAGES.forEach((st, i) => {
+      const d = el("div", "", st.name);
+      d.append(el("b", "", (state.scores[i] ?? 0) + " / " + LEVEL_Q));
+      bd.append(d);
+    });
+    wrap.append(bd);
+  }
+  const row = el("div", "row");
+  if (passed && !lastStage) {
+    const n = el("button", "btn primary", "Start level " + (run.stage + 2));
+    n.type = "button";
+    n.addEventListener("click", () => startStage(run.stage + 1));
+    row.append(n);
+  }
+  const r = el("button", passed && !lastStage ? "btn" : "btn primary", "Retry level " + (run.stage + 1));
+  r.type = "button";
+  r.addEventListener("click", () => startStage(run.stage));
+  row.append(r);
+  if (passed && lastStage) {
+    const all = el("button", "btn", "Start over");
+    all.type = "button";
+    all.addEventListener("click", () => { state = { scores: [null, null, null, null], stage: 0, mode: state.mode, section: state.section, fast: state.fast, best: state.best, chap: state.chap }; save(); showWelcome(); });
+    row.append(all);
+  }
+  if (!(passed && lastStage)) {
+    const hm = el("button", "btn", "Choose level");
+    hm.type = "button";
+    hm.addEventListener("click", showWelcome);
+    row.append(hm);
+  }
+  wrap.append(row);
+  card.append(wrap);
+  if (passed) burst();
+}
+
+/* ---------- Opening screen ---------- */
+const SPLASH_FORMULAS = ["a² + b² = c²", "e^(iπ) + 1 = 0", "∫ x dx = x²/2", "n(n+1)/2", "sin²θ + cos²θ = 1", "x = (−b ± √(b² − 4ac)) / 2a", "π ≈ 3.14159", "Σ 1/n²", "f′(x)", "√2 ≈ 1.414", "7 × 8 = 56", "A = πr²"];
+function buildSplash() {
+  const NS = "http://www.w3.org/2000/svg";
+  const art = document.getElementById("spArt");
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 800 800");
+  svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
+  const add = (tag, attrs, text) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    svg.append(n);
+    return n;
+  };
+  const ox = 400, oy = 340;
+  add("line", { class: "ax", x1: 0, y1: oy, x2: 800, y2: oy });
+  add("line", { class: "ax", x1: ox, y1: 0, x2: ox, y2: 800 });
+  for (let t = -7; t <= 7; t++) {
+    if (!t) continue;
+    add("line", { class: "ax", x1: ox + t * 50, y1: oy - 5, x2: ox + t * 50, y2: oy + 5 });
+    add("line", { class: "ax", x1: ox - 5, y1: oy + t * 50, x2: ox + 5, y2: oy + t * 50 });
+  }
+  let d = "";
+  for (let u = -3.2; u <= 3.2; u += 0.1) d += (d ? "L" : "M") + (ox + u * 100).toFixed(1) + " " + (oy - u * u * 55).toFixed(1);
+  add("path", { class: "curve c1", d, pathLength: "1" });
+  d = "";
+  for (let x = 0; x <= 800; x += 8) d += (d ? "L" : "M") + x + " " + (oy - 70 * Math.sin((x - ox) / 55)).toFixed(1);
+  add("path", { class: "curve c2", d, pathLength: "1" });
+  add("circle", { class: "unit", cx: ox, cy: oy, r: 100 });
+  add("polygon", { class: "tri", points: "470,660 700,660 700,515" });
+  add("path", { class: "rt", d: "M678 660 V638 H700" });
+  add("text", {x: 570, y: 688}, "a");
+  add("text", {x: 716, y: 596}, "b");
+  add("text", {x: 566, y: 576}, "c");
+  add("text", { class: "hl", x: 640, y: 150 }, "y = x²");
+  add("text", { class: "hl", x: 24, y: 450 }, "y = sin x");
+  add("text", { class: "hl", x: ox + 110, y: oy + 34 }, "r = 1");
+  art.append(svg);
+  SPLASH_FORMULAS.forEach((f, i) => {
+    const n = el("span", "sp-f" + (i % 3 === 2 ? " alt" : ""), f);
+    n.style.left = ((i * 29 + 4) % 62) + "%";
+    n.style.top = (4 + ((i * 17) % 52)) + "%";
+    n.style.fontSize = (14 + ((i * 7) % 14)) + "px";
+    n.style.setProperty("--d", (11 + (i % 6) * 2) + "s");
+    n.style.animationDelay = (-i * 1.1) + "s";
+    art.append(n);
+  });
+}
+function closeSplash() {
+  const s = document.getElementById("splash");
+  s.classList.add("leaving");
+  document.body.classList.remove("splash-on");
+  setTimeout(() => { s.hidden = true; }, 520);
+}
+
+document.getElementById("homeBtn").addEventListener("click", showWelcome);
+buildBackdrop();
+buildSplash();
+showWelcome();
+document.body.classList.add("splash-on");
+const splashBtn = document.getElementById("splashStart");
+splashBtn.addEventListener("click", closeSplash);
+splashBtn.focus({ preventScroll: true });
+</script>
+
+</body></html>
